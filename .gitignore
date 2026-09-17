@@ -1,5 +1,6 @@
 # Entorno virtual y secretos locales
 env/
+venv/
 .env
 
 # Archivos generados por Python y Django
