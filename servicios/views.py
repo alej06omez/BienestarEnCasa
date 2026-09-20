@@ -1,27 +1,56 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Servicio, multimediaServicio, servicioInsumo
-from .forms import CrearNewServicio, addMultimediaServicio, addServicioInsumo
+from .forms import CrearNewServicio, addServicioMultimediaForm, addServicioInsumoForm
 
 # Create your views here.
 
 def servicios_view(request):
     servicios = Servicio.objects.all()
-    return render(request, 'servicios/servicios.html', {'servicios': servicios})
+    return render(request, 'layouts/mis_servicios.html', {'servicios': servicios})
 
 def servicio_datalle_view(request, servicio_id):
     servicio = get_object_or_404(Servicio, id=servicio_id)
     multimedia = multimediaServicio.objects.filter(servicio=servicio)
     insumos = servicioInsumo.objects.filter(servicio=servicio)
-    return render(request, 'servicios/servicio_detalle.html', {'servicio': servicio, 'multimedia': multimedia, 'insumos': insumos})
+    return render(request, 'layouts/servicio_detalle.html', {'servicio': servicio, 'multimedia': multimedia, 'insumos': insumos})
 
 def servicios_por_categoria_view(request, categoria):
     servicios = Servicio.objects.filter(categoria=categoria)
-    return render(request, 'servicios/servicios_por_categoria.html', {'servicios': servicios, 'categoria': categoria})
+    return render(request, 'layouts/servicios_por_categoria.html', {'servicios': servicios, 'categoria': categoria})
+
+
 
 
 #Revisar y cambiar por forms.py
 def crear_servicio_view(request):
+
     if request.method == 'GET':
-        return render(request, "layouts/servicio/crear_servicio.html", {'form' : CrearNewServicio})
+        return render(request, "layouts/servicios/crear_servicio.html", {'form' : CrearNewServicio})
     else: 
-        Servicio.objects.create(nombre = request.POST('nombre'), categoria = request.POST('categoria'), descripcion = request.POST('descripcion'), duracion=request.POST('descripcion'), precio=request.POST('precio'), estado=request.POST('estado'), servicio_id = "") #establecer que se envie el id del servicio respectivo
+        Servicio.objects.create(nombre = request.POST.get('nombre'), 
+                                categoria = request.POST.get('categoria'), 
+                                descripcion = request.POST.get('descripcion'), duracion=request.POST.get('descripcion'), 
+                                precio=request.POST.get('precio'), estado=request.POST.get('estado')) 
+
+
+
+def addServicioInsumo(request, servicio_id):
+    if request.method == 'GET':
+        form = addServicioInsumoForm(initial={'servicio': servicio_id})
+        return render(request, "layouts/servicio/anadir_insumo.html", {'form': form})
+    else:
+        form = addServicioInsumoForm(request.POST)
+        if form.is_valid():
+            servicioInsumo.objects.create(
+                nombre=form.cleaned_data['nombre'],
+                servicio=form.cleaned_data['servicio']
+            )
+            return redirect('nombre_de_tu_url_de_exito')
+        return render(request, "layouts/servicio/anadir_insumo.html", {'form': form})
+
+
+def addServicioMultimedia(request):
+    if request.method == 'GET':
+            return render(request, "layouts/servicio/anadir_multimedia.html", {'form' : addServicioMultimedia})
+    else: 
+        addServicioMultimedia.objects.create(tipo=request.POST.get('tipo'), url = request.POST.get('url'), servicio_id = request.POST.get('servicio_id'))

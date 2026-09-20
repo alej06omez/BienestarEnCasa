@@ -1,0 +1,18 @@
+{% extends "layouts/servicios_base.html" %}
+
+{% block content%}
+
+<h1>Crear Servicio Nuevo</h1>
+
+<h1>Crea tu servicio aqui</h1>
+<form method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button>
+        Guardar servicio
+    </button>
+
+
+</form>
+
+{% endblock %}

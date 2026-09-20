@@ -1,0 +1,29 @@
+{% extends 'layouts/servicios_base.html' %}
+
+{% block content%}
+<h1>Servicios</h1>
+
+<article class="card">
+{% for servicio in servicios %}
+
+<article class="card">
+    <a href="{% url 'servicio_detalle' servicio.id %}">
+    <h1>{{servicio.name}}</h1>
+    <p>{{servicio.categoria}}</p>
+    <p>{{servicio.descripcion}}</p>
+    <p>{{servicio.duracion}}</p>
+    <p>{{servicio.precio}}</p>
+    
+    {% if servicio.estado == "activo" or servicio.estado == "Activo" %}
+    <p>Estado: Activo ✅</p>
+    {% elif servicio.estado == "inactivo"  or servicio.estado == "Inactivo"%}
+    <p>Estado: Inactivo ⏸️</p>
+    {% endif %}
+</a>
+
+</article>
+
+{%endfor%}
+
+</article>
+{% endblock %}

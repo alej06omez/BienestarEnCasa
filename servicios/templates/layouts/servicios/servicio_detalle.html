@@ -1,0 +1,19 @@
+{% extends "layouts/base.html" %}
+
+{% block content%}
+<h1>{{servicio}}</h1>
+
+{% for servicioInsumo in tasks servicioInsumos %}
+<div class="card">
+    <p>{{servicioInsumo.nombre}}</p>
+</div>
+{% endfor %}
+
+
+{% for servicioMultimedia in tasks servicioMultimedias %}
+<div class="card">
+    <p>{{servicioMultimedia.url}}</p>
+</div>
+{% endfor %}
+
+{% endblock %}

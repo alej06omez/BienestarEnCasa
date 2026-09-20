@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de proveedor</title>
+  <link rel="preconnect" href="https://googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{% static 'styles/main.css' %}">
+</head>
+<body>
+  <div class="panel-proveedor">
+    <div class="cambiar-perfil">Cambiar perfil</div>
+
+    <div class="perfil-header">     
+      <span>Perfil proveedor - Gestión</span>
+    </div>
+
+    <article class="tabs">
+    <a class="tab" href="#">📋 Solicitudes entrantes</a>
+    <a class="tab" href="#">👥 Mis clientes</a>
+    <a class="tab" href="#">📅 Mi horario</a>
+    <a class="tab" href="{% url 'servicios' %}">💆 Mis servicios</a>
+</article>
+  </div>
+  <main class="container">
+        {% block content%}
+
+        {% endblock %}
+    </main>
+</body>
+</html>
