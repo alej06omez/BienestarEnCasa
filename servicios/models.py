@@ -10,7 +10,7 @@ class Servicio (models.Model):
     descripcion = models.TextField()
     duracion = models.DurationField()
     precio = models.DecimalField(max_digits=10, decimal_places=2)
-    creado_en = models.DateTimeField()
+    creado_en = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=[('activo', 'Activo'), ('inactivo', 'Inactivo')], default='activo')
 
     class Meta:

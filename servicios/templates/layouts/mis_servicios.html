@@ -3,6 +3,10 @@
 {% block content%}
 <h1>Servicios</h1>
 
+<a class="mi-boton" href="{% url 'crear_servicio' %}">
+    <button>Crear Servicio</button>
+</a>
+
 <article class="card">
 {% for servicio in servicios %}
 

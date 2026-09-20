@@ -1,6 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Servicio, multimediaServicio, servicioInsumo
 from .forms import CrearNewServicio, addServicioMultimediaForm, addServicioInsumoForm
+from datetime import timedelta
+
+#<a href="{% url 'crear_servicio_view' %}" class="mi-boton">Crear Servicio</a>
 
 # Create your views here.
 
@@ -27,10 +30,13 @@ def crear_servicio_view(request):
     if request.method == 'GET':
         return render(request, "layouts/servicios/crear_servicio.html", {'form' : CrearNewServicio})
     else: 
+        duracion_str = request.POST.get('duracion')  # viene como string, ej: "30"
+        duracion = timedelta(minutes=int(duracion_str))  # lo conviertes a timedelta
         Servicio.objects.create(nombre = request.POST.get('nombre'), 
                                 categoria = request.POST.get('categoria'), 
-                                descripcion = request.POST.get('descripcion'), duracion=request.POST.get('descripcion'), 
+                                descripcion = request.POST.get('descripcion'), duracion=duracion,
                                 precio=request.POST.get('precio'), estado=request.POST.get('estado')) 
+        return redirect('servicios')
 
 
 
