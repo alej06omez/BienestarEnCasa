@@ -1,0 +1,16 @@
+{% extends "layouts/servicios_base.html" %}
+
+{% block content%}
+
+<h1>Crea tu contenido multimedia aqui</h1>
+<form method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button>
+        Guardar contenido
+    </button>
+
+
+</form>
+
+{% endblock %}

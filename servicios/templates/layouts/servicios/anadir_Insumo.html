@@ -1,0 +1,16 @@
+{% extends "layouts/servicios_base.html" %}
+
+{% block content%}
+
+<h1>Crea tus insumos aqui</h1>
+<form method="post">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button>
+        Guardar Insumo
+    </button>
+
+
+</form>
+
+{% endblock %}

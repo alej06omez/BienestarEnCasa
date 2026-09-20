@@ -36,7 +36,7 @@ class multimediaServicio(models.Model):
 class servicioInsumo(models.Model):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='insumos')
     nombre = models.CharField(max_length=100)
-    idinsumo = models.CharField(max_length=50)
+   
 
     class Meta:
         verbose_name = 'servicioInsumo'

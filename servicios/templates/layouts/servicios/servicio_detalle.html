@@ -19,29 +19,30 @@
 <article class="card">
 
     <section class="insumos">
-        <h2>Insumos</h2>
-        {% if servicioInsumos %}
-        {% for servicioInsumo in servicioInsumos %}
+    <h2>Insumos</h2>
+    {% if insumos %}
+        {% for insumo in insumos %}
             <div class="card">
-            <p>{{ servicioInsumo.nombre }}</p>
+                <p>{{ insumo.nombre }}</p>
             </div>
         {% endfor %}
-        {% else %}
+    {% else %}
         <p>No hay insumos registrados.</p>
-        {% endif %}
-    </section>
+    {% endif %}
+</section>
 
     <section class="multimedia">
         <h2>Multimedia</h2>
-        {% if servicioMultimedias %}
-        {% for servicioMultimedia in servicioMultimedias %}
-            <div class="card">
-            <p>{{ servicioMultimedia.url }}</p>
-            </div>
-        {% endfor %}
+        {% if multimedias %}
+          {% for multimedia in multimedias %}
+              <div class="card">
+                <p>{{ multimedia.tipo }}</p>
+                <p>{{ multimedia.url }}</p>
+              </div>
+          {% endfor %}
         {% else %}
-        <p>No hay multimedia disponible.</p>
-        {% endif %}
+          <p>No hay contenido aún.</p>
+      {% endif %}
     </section>
 
 </article>

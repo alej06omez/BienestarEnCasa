@@ -18,9 +18,9 @@ class addServicioInsumoForm(forms.Form):
         queryset=Servicio.objects.all(),
         label='Servicio'
     )
-    nombre = forms.CharField(label='Nombre del Servicio', max_length=100)
+    nombre = forms.CharField(label='Nombre del Insumo', max_length=100)
 
 class addServicioMultimediaForm(forms.Form):
     servicio = forms.ModelChoiceField(queryset=Servicio.objects.all(), label='Servicio')
-    tipo = forms.ChoiceField(label="Tipo de Archivo", choices=[('imagen', 'Imagen'), ('video', 'Video')])
-    url = forms.FileField(label="Archivo Multimedia")
+    tipo = forms.ChoiceField(label="Tipo de Archivo", choices=[('Imagen', 'Imagen'), ('Video', 'Video')])
+    url = forms.URLField(label="Archivo Multimedia")
