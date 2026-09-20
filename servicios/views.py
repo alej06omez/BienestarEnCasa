@@ -15,7 +15,7 @@ def servicio_datalle_view(request, servicio_id):
     servicio = get_object_or_404(Servicio, id=servicio_id)
     multimedia = multimediaServicio.objects.filter(servicio=servicio)
     insumos = servicioInsumo.objects.filter(servicio=servicio)
-    return render(request, 'layouts/servicio_detalle.html', {'servicio': servicio, 'multimedia': multimedia, 'insumos': insumos})
+    return render(request, 'layouts/servicios/servicio_detalle.html', {'servicio': servicio, 'multimedia': multimedia, 'insumos': insumos})
 
 def servicios_por_categoria_view(request, categoria):
     servicios = Servicio.objects.filter(categoria=categoria)

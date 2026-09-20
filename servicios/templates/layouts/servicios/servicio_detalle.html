@@ -1,19 +1,48 @@
-{% extends "layouts/base.html" %}
+{% extends "layouts/servicios_base.html" %}
 
-{% block content%}
-<h1>{{servicio}}</h1>
+{% block content %}
+<h1>{{ servicio.nombre }}</h1>
 
-{% for servicioInsumo in tasks servicioInsumos %}
-<div class="card">
-    <p>{{servicioInsumo.nombre}}</p>
+<div class="acciones">
+  <p>
+    <a class="boton boton-insumo" href="{% url 'add_insumo' servicio.id %}">
+      <button>Añadir insumo</button>
+    </a>
+  </p>
+  <p>
+    <a class="boton boton-multimedia" href="{% url 'add_multimedia' servicio.id %}">
+     <button>Añadir contenido multimedia</button>
+    </a>
+  </p>
 </div>
-{% endfor %}
 
+<article class="card">
 
-{% for servicioMultimedia in tasks servicioMultimedias %}
-<div class="card">
-    <p>{{servicioMultimedia.url}}</p>
-</div>
-{% endfor %}
+    <section class="insumos">
+        <h2>Insumos</h2>
+        {% if servicioInsumos %}
+        {% for servicioInsumo in servicioInsumos %}
+            <div class="card">
+            <p>{{ servicioInsumo.nombre }}</p>
+            </div>
+        {% endfor %}
+        {% else %}
+        <p>No hay insumos registrados.</p>
+        {% endif %}
+    </section>
 
+    <section class="multimedia">
+        <h2>Multimedia</h2>
+        {% if servicioMultimedias %}
+        {% for servicioMultimedia in servicioMultimedias %}
+            <div class="card">
+            <p>{{ servicioMultimedia.url }}</p>
+            </div>
+        {% endfor %}
+        {% else %}
+        <p>No hay multimedia disponible.</p>
+        {% endif %}
+    </section>
+
+</article>
 {% endblock %}
