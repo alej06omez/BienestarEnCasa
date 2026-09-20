@@ -61,7 +61,7 @@ def addServicioMultimedia(request, servicio_id):
         form = addServicioMultimediaForm(initial={'servicio': servicio_id})
         return render(request, "layouts/servicios/anadir_Multimedia.html", {'form': form})
     else:
-        form = addServicioMultimediaForm(request.POST)
+        form = addServicioMultimediaForm(request.POST, request.FILES)
         if form.is_valid():
                 multimediaServicio.objects.create(
                     tipo=form.cleaned_data['tipo'],

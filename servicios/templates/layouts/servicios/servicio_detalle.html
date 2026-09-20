@@ -36,9 +36,21 @@
         {% if multimedias %}
           {% for multimedia in multimedias %}
               <div class="card">
-                <p>{{ multimedia.tipo }}</p>
-                <p>{{ multimedia.url }}</p>
-              </div>
+                
+                {% if multimedia.tipo == "Imagen" %}
+                    <!-- Renderizar imagen -->
+                    <img src="{{ multimedia.url.url }}" alt="Imagen de {{ multimedia.servicio.nombre }}" width="300">
+                {% elif multimedia.tipo == "Video" %}
+                    
+                    <video width="400" controls>
+                        <source src="{{ multimedia.url.url }}" type="video/mp4">
+                        Tu navegador no soporta video.
+                    </video>
+                {% else %}
+                    <!-- Enlace genérico para otros archivos -->
+                    <a href="{{ multimedia.url.url }}" target="_blank">Descargar archivo</a>
+                {% endif %}
+
           {% endfor %}
         {% else %}
           <p>No hay contenido aún.</p>

@@ -23,7 +23,7 @@ class Servicio (models.Model):
 
 class multimediaServicio(models.Model):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='multimedia')
-    url = models.URLField(max_length=200, blank=True, null=False)
+    url = models.FileField(max_length=200, blank=True, null=False)
     tipo = models.CharField(max_length=10, choices=[('imagen', 'Imagen'), ('video', 'Video')])
 
     class Meta:
@@ -35,6 +35,7 @@ class multimediaServicio(models.Model):
 
 class servicioInsumo(models.Model):
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='insumos')
+    tipo = models.CharField(max_length=10, choices=[('Producto', 'producto'), ('Equipos', 'equipo'), ('Insumo', 'insumo')], default='Producto')
     nombre = models.CharField(max_length=100)
    
 
