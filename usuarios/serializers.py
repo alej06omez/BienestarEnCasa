@@ -63,6 +63,32 @@ class PerfilSerializer(serializers.ModelSerializer):
         fields = ('id', 'email', 'nombres', 'apellidos', 'rol', 'telefono', 'creado_en', 'actualizado_en')
         read_only_fields = ('id', 'rol', 'creado_en', 'actualizado_en')
 
+class ActualizarPerfilSerializer(serializers.ModelSerializer):
+    nombres = serializers.CharField(
+        source='usuario.first_name',
+        max_length=150,
+        required=False,
+    )
+    apellidos = serializers.CharField(
+        source='usuario.last_name',
+        max_length=150,
+        required=False,
+    )
+
+    class Meta:
+        model = PerfilUsuario
+        fields = ('nombres', 'apellidos', 'telefono')
+
+    def update(self, instance, validated_data):
+        datos_usuario = validated_data.pop('usuario', {})
+
+        for campo, valor in datos_usuario.items():
+            setattr(instance.usuario, campo, valor)
+
+        if datos_usuario:
+            instance.usuario.save(update_fields=list(datos_usuario.keys()))
+
+        return super().update(instance, validated_data)
 
 class InicioSesionSerializer(TokenObtainPairSerializer):
     username_field = 'email'

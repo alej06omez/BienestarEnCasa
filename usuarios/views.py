@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from .models import Direccion, PerfilUsuario
 
-from .serializers import CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
+from .serializers import ActualizarPerfilSerializer, CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
 
 
 class RegistroView(generics.CreateAPIView):
@@ -32,8 +32,14 @@ class CerrarSesionView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class MiPerfilView(generics.RetrieveAPIView):
-    serializer_class = PerfilSerializer
+class MiPerfilView(generics.RetrieveUpdateAPIView):
+    http_method_names = ['get', 'patch', 'head', 'options']
+
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return ActualizarPerfilSerializer
+
+        return PerfilSerializer
 
     def get_object(self):
         return self.request.user.perfil
