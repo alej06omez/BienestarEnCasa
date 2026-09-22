@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from .models import Direccion, PerfilUsuario
 
 from .serializers import CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
@@ -70,3 +70,35 @@ class DireccionListCreateView(generics.ListCreateAPIView):
             usuario=self.request.user,
             es_principal=es_principal or not existe_direccion_principal,
         )
+
+class DireccionDetalleView(generics.RetrieveUpdateAPIView):
+    serializer_class = DireccionSerializer
+
+    def get_queryset(self):
+        if self.request.user.perfil.rol != PerfilUsuario.Rol.CLIENTE:
+            raise PermissionDenied('Solo los clientes pueden consultar direcciones.')
+
+        return Direccion.objects.filter(usuario=self.request.user)
+
+    def perform_update(self, serializer):
+        direccion = self.get_object()
+        es_principal = serializer.validated_data.get('es_principal')
+
+        if es_principal is True:
+            Direccion.objects.filter(
+                usuario=self.request.user,
+                es_principal=True,
+            ).exclude(pk=direccion.pk).update(es_principal=False)
+
+        if es_principal is False and direccion.es_principal:
+            existe_otra_principal = Direccion.objects.filter(
+                usuario=self.request.user,
+                es_principal=True,
+            ).exclude(pk=direccion.pk).exists()
+
+            if not existe_otra_principal:
+                raise ValidationError(
+                    {'es_principal': 'Debe existir al menos una dirección principal.'}
+                )
+
+        serializer.save()
