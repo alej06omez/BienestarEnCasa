@@ -2,10 +2,10 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from .models import Direccion, PerfilUsuario
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from .models import Direccion, PerfilProveedor, PerfilUsuario, ZonaAtencion
 
-from .serializers import ActualizarPerfilSerializer, CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
+from .serializers import ZonaAtencionSerializer, PerfilProveedorSerializer, ActualizarPerfilSerializer, CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
 
 
 class RegistroView(generics.CreateAPIView):
@@ -108,3 +108,78 @@ class DireccionDetalleView(generics.RetrieveUpdateAPIView):
                 )
 
         serializer.save()
+
+class MiPerfilProveedorView(APIView):
+    def verificar_proveedor(self, request):
+        if request.user.perfil.rol != PerfilUsuario.Rol.PROVEEDOR:
+            raise PermissionDenied(
+                'Solo los proveedores pueden gestionar su perfil profesional.'
+            )
+
+    def obtener_perfil(self, request):
+        try:
+            return request.user.perfil.perfil_profesional
+        except PerfilProveedor.DoesNotExist:
+            raise NotFound('Aún no has creado tu perfil profesional.')
+
+    def get(self, request):
+        self.verificar_proveedor(request)
+        perfil = self.obtener_perfil(request)
+        return Response(PerfilProveedorSerializer(perfil).data)
+
+    def post(self, request):
+        self.verificar_proveedor(request)
+
+        if hasattr(request.user.perfil, 'perfil_profesional'):
+            raise ValidationError(
+                'Ya existe un perfil profesional para este proveedor.'
+            )
+
+        serializer = PerfilProveedorSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        perfil = serializer.save(perfil_usuario=request.user.perfil)
+
+        return Response(
+            PerfilProveedorSerializer(perfil).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def patch(self, request):
+        self.verificar_proveedor(request)
+        perfil = self.obtener_perfil(request)
+
+        serializer = PerfilProveedorSerializer(
+            perfil,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
+
+class MisZonasAtencionView(generics.ListCreateAPIView):
+    serializer_class = ZonaAtencionSerializer
+
+    def obtener_perfil_proveedor(self):
+        if self.request.user.perfil.rol != PerfilUsuario.Rol.PROVEEDOR:
+            raise PermissionDenied(
+                'Solo los proveedores pueden gestionar zonas de atención.'
+            )
+
+        try:
+            return self.request.user.perfil.perfil_profesional
+        except PerfilProveedor.DoesNotExist:
+            raise NotFound(
+                'Primero debes crear tu perfil profesional.'
+            )
+
+    def get_queryset(self):
+        perfil_proveedor = self.obtener_perfil_proveedor()
+        return ZonaAtencion.objects.filter(
+            perfil_proveedor=perfil_proveedor
+        )
+
+    def perform_create(self, serializer):
+        perfil_proveedor = self.obtener_perfil_proveedor()
+        serializer.save(perfil_proveedor=perfil_proveedor)

@@ -6,7 +6,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Direccion, PerfilUsuario
+from .models import Direccion, PerfilProveedor, PerfilUsuario, ZonaAtencion
 
 
 Usuario = get_user_model()
@@ -130,3 +130,21 @@ class DireccionSerializer(serializers.ModelSerializer):
             'actualizada_en',
         )
         read_only_fields = ('id', 'creada_en', 'actualizada_en')
+
+class PerfilProveedorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PerfilProveedor
+        fields = (
+            'id',
+            'descripcion_profesional',
+            'creado_en',
+            'actualizado_en',
+        )
+        read_only_fields = ('id', 'creado_en', 'actualizado_en')
+
+
+class ZonaAtencionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ZonaAtencion
+        fields = ('id', 'ciudad', 'barrio_sector')
+        read_only_fields = ('id',)
