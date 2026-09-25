@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import MiPerfilProveedorView, MisZonasAtencionView
+from .views import MiPerfilProveedorView, MisZonasAtencionView, ProveedorDetalleView
 
 
 urlpatterns = [
@@ -14,4 +14,5 @@ urlpatterns = [
         MisZonasAtencionView.as_view(),
         name='mis-zonas-atencion',
     ),
+    path('<int:pk>/', ProveedorDetalleView.as_view(), name='detalle-proveedor'),
 ]

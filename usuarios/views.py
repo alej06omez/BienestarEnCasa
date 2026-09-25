@@ -5,7 +5,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from .models import Direccion, PerfilProveedor, PerfilUsuario, ZonaAtencion
 
-from .serializers import ZonaAtencionSerializer, PerfilProveedorSerializer, ActualizarPerfilSerializer, CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
+from catalogo.models import Servicio
+from django.db.models import Prefetch
+
+from .serializers import ProveedorPublicoSerializer, ZonaAtencionSerializer, PerfilProveedorSerializer, ActualizarPerfilSerializer, CerrarSesionSerializer, DireccionSerializer, InicioSesionSerializer, PerfilSerializer, RegistroSerializer
 
 
 class RegistroView(generics.CreateAPIView):
@@ -183,3 +186,17 @@ class MisZonasAtencionView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         perfil_proveedor = self.obtener_perfil_proveedor()
         serializer.save(perfil_proveedor=perfil_proveedor)
+
+
+class ProveedorDetalleView(generics.RetrieveAPIView):
+    """Perfil público del proveedor con su catálogo activo (HU-09)."""
+    serializer_class = ProveedorPublicoSerializer
+    queryset = PerfilProveedor.objects.select_related('perfil_usuario__usuario').prefetch_related(
+        'zonas_atencion',
+        Prefetch(
+            'servicios',
+            queryset=Servicio.objects.filter(estado=Servicio.Estado.ACTIVO)
+            .select_related('categoria', 'proveedor__perfil_usuario__usuario')
+            .prefetch_related('multimedia', 'elementos'),
+        ),
+    )
