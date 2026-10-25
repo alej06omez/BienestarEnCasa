@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function cargarServiciosProveedor() {
-    fetch('/api/catalogo/servicios/')
+    fetch('/api/catalogo/servicios/mios/')
       .then(function(res) { return res.json(); })
       .then(function(data) {
         const lista = Array.isArray(data) ? data : (data.results || []);
