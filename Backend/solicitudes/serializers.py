@@ -2,6 +2,7 @@ import datetime
 from rest_framework import serializers
 from .models import SolicitudReserva
 from catalogo.models import Servicio  # Ajusta la importación según la ubicación de tu modelo Servicio
+from usuarios.disponibilidad import validar_horario_reserva
 
 class SolicitudReservaSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()
@@ -80,6 +81,24 @@ class SolicitudReservaSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     "hora_solicitada": "El horario de atención es únicamente de 8:00 AM a 5:00 PM."
                 })
+
+        return super().validate(attrs)
+
+    def validate(self, attrs):
+        campos_horario = {'fecha_solicitada', 'hora_solicitada', 'servicio'}
+        if self.instance is None or campos_horario.intersection(attrs):
+            fecha = attrs.get('fecha_solicitada', getattr(self.instance, 'fecha_solicitada', None))
+            hora = attrs.get('hora_solicitada', getattr(self.instance, 'hora_solicitada', None))
+            servicio = attrs.get('servicio', getattr(self.instance, 'servicio', None))
+            proveedor = (
+                servicio.proveedor if servicio
+                else getattr(self.instance, 'proveedor', None)
+            )
+            if self.instance and 'servicio' not in attrs:
+                duracion = self.instance.duracion_minutos_copia
+            else:
+                duracion = servicio.duracion_minutos if servicio else 0
+            validar_horario_reserva(proveedor, fecha, hora, duracion)
 
         return super().validate(attrs)
 
