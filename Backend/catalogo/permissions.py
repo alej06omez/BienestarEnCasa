@@ -69,10 +69,7 @@ class IsProveedorOwnerOrReadOnly(permissions.BasePermission):
             if obj.proveedor.perfil_usuario.usuario == request.user:
                 return True
 
-        # 3. Si el usuario está autenticado como Proveedor en la sesión activa, permitir gestión
-        if perfil and str(getattr(perfil, 'rol', '')).upper() in ['PROVEEDOR', 'PRO']:
-            return True
-
+        
         return False
 
 
@@ -93,8 +90,5 @@ def es_dueno_servicio(user, servicio):
     if hasattr(servicio, 'proveedor') and hasattr(servicio.proveedor, 'perfil_usuario'):
         if servicio.proveedor.perfil_usuario.usuario == user:
             return True
-
-    if perfil and str(getattr(perfil, 'rol', '')).upper() in ['PROVEEDOR', 'PRO']:
-        return True
 
     return False
