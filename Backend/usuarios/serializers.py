@@ -164,16 +164,22 @@ class DireccionSerializer(serializers.ModelSerializer):
 
 
 class PerfilProveedorSerializer(serializers.ModelSerializer):
+    zonas_atencion = serializers.SerializerMethodField()
+
     class Meta:
         model = PerfilProveedor
         fields = (
             'id',
             'descripcion_profesional',
+            'zonas_atencion',
             'creado_en',
             'actualizado_en',
         )
         read_only_fields = ('id', 'creado_en', 'actualizado_en')
 
+    def get_zonas_atencion(self, obj):
+        zonas = obj.zonas_atencion.all()
+        return ZonaAtencionSerializer(zonas, many=True).data
 
 class ZonaAtencionSerializer(serializers.ModelSerializer):
     class Meta:
