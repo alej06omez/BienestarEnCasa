@@ -158,6 +158,8 @@
 </div>
 
 <script>
+// Requiere que bec-core.js se cargue ANTES que este archivo
+// (define window.BEC.api, window.BEC.lista, window.BEC.cerrarSesion).
 document.addEventListener('DOMContentLoaded', function() {
   var contenedor = document.getElementById('contenedorDirecciones');
   var form = document.getElementById('formAgregarDireccion');
@@ -193,8 +195,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     contenedor.innerHTML = lista.map(function(dir) {
-      var barrio = dir.barrio_sector || dir.barrio || '';
-      var comp = dir.informacion_complementaria || dir.complemento || '';
+      var barrio = dir.barrio || '';
+      var comp = dir.complemento || '';
 
       return `
         <div style="background-color: #ffffff; border-radius: 1rem; border: 1px solid #e2e8f0; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -229,14 +231,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }).join('');
   }
 
+  function mostrarError(texto) {
+    if (!msgsBox) return;
+    msgsBox.innerHTML = '<div style="background-color:#FEF2F2; color:#DC2626; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem; margin-bottom:1rem; border:1px solid #FECACA;">' + texto + '</div>';
+  }
+
+  function mostrarExito(texto) {
+    if (!msgsBox) return;
+    msgsBox.innerHTML = '<div style="background-color:#F0FDF4; color:#166534; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem; margin-bottom:1rem; border:1px solid #BBF7D0;">' + texto + '</div>';
+  }
+
   function cargarDirecciones() {
-    fetch('/api/usuarios/direcciones/')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        var lista = Array.isArray(data) ? data : (data.results || []);
-        renderizarDirecciones(lista);
+    window.BEC.api('/api/usuarios/direcciones/', { method: 'GET' })
+      .then(function(res) {
+        if (!res.ok) {
+          // 403 aquí = el usuario autenticado no es CLIENTE (regla de
+          // negocio de DireccionListCreateView), no una lista vacía.
+          mostrarError(
+            res.status === 403
+              ? 'Solo las cuentas de tipo Cliente pueden consultar direcciones.'
+              : 'No se pudieron cargar las direcciones.'
+          );
+          renderizarDirecciones([]);
+          return;
+        }
+        renderizarDirecciones(window.BEC.lista(res.data));
       })
       .catch(function() {
+        // Una sesión vencida ya fue redirigida por el interceptor de BEC.api;
+        // esto solo cubre errores de red genuinos.
         renderizarDirecciones([]);
       });
   }
@@ -244,28 +267,21 @@ document.addEventListener('DOMContentLoaded', function() {
   cargarDirecciones();
 
   window.eliminarDireccion = function(id) {
-    if (!id || !confirm("¿Deseas eliminar esta dirección?")) return;
-    
-    var csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-    var csrfToken = csrfInput ? csrfInput.value : '';
+    if (!id || !confirm('¿Deseas eliminar esta dirección?')) return;
 
-    fetch('/api/usuarios/direcciones/' + id + '/', {
-      method: 'DELETE',
-      headers: {
-        'X-CSRFToken': csrfToken
-      },
-      credentials: 'same-origin'
-    })
-    .then(function(res) {
-      if (res.ok || res.status === 204) {
-        cargarDirecciones();
-      } else {
-        alert("No se pudo eliminar la dirección.");
-      }
-    })
-    .catch(function() {
-      alert("Error de conexión al eliminar.");
-    });
+    window.BEC.api('/api/usuarios/direcciones/' + id + '/', { method: 'DELETE' })
+      .then(function(res) {
+        if (res.ok || res.status === 204) {
+          cargarDirecciones();
+        } else if (res.status === 405) {
+          alert('Esta operación aún no está habilitada en el servidor.');
+        } else {
+          alert('No se pudo eliminar la dirección.');
+        }
+      })
+      .catch(function() {
+        alert('Error de conexión al eliminar.');
+      });
   };
 
   if (form) {
@@ -273,63 +289,52 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       if (msgsBox) msgsBox.innerHTML = '';
 
-      var csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-      var csrfToken = csrfInput ? csrfInput.value : '';
-
       var btnSubmit = document.getElementById('btnGuardarDireccion');
       if (btnSubmit) {
         btnSubmit.disabled = true;
         btnSubmit.textContent = 'Guardando...';
       }
 
+      // Nombres alineados con DireccionSerializer: 'barrio' y 'complemento'
+      // (antes se mandaban como 'barrio_sector' e 'informacion_complementaria',
+      // que el serializer ignora silenciosamente por no existir).
       var payload = {
         direccion: document.getElementById('inputDireccion').value.trim(),
         ciudad: document.getElementById('inputCiudad').value.trim(),
-        barrio_sector: document.getElementById('inputBarrio').value.trim(),
-        informacion_complementaria: document.getElementById('inputComplemento').value.trim(),
+        barrio: document.getElementById('inputBarrio').value.trim(),
+        complemento: document.getElementById('inputComplemento').value.trim(),
         es_principal: document.getElementById('checkPrincipal').checked
       };
 
-      fetch('/api/usuarios/direcciones/', {
+      window.BEC.api('/api/usuarios/direcciones/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(payload)
+        body: payload
       })
-      .then(function(response) {
+      .then(function(res) {
         if (btnSubmit) {
           btnSubmit.disabled = false;
           btnSubmit.textContent = 'Guardar dirección';
         }
 
-        if (response.ok || response.status === 201) {
+        if (res.ok || res.status === 201) {
           form.reset();
           cargarDirecciones();
-          if (msgsBox) {
-            msgsBox.innerHTML = '<div style="background-color:#F0FDF4; color:#166534; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem; margin-bottom:1rem; border:1px solid #BBF7D0;">Dirección guardada con éxito.</div>';
-          }
+          mostrarExito('Dirección guardada con éxito.');
+        } else if (res.status === 403) {
+          mostrarError('Solo las cuentas de tipo Cliente pueden registrar direcciones.');
         } else {
-          return response.json().then(function(data) {
-            if (msgsBox) {
-              var errorMsg = "No se pudo guardar la dirección. ";
-              if (data.detail) errorMsg += data.detail;
-              else if (typeof data === 'object') errorMsg += JSON.stringify(data);
-              msgsBox.innerHTML = '<div style="background-color:#FEF2F2; color:#DC2626; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem; margin-bottom:1rem; border:1px solid #FECACA;">' + errorMsg + '</div>';
-            }
-          });
+          var errorMsg = 'No se pudo guardar la dirección. ';
+          if (res.data && res.data.detail) errorMsg += res.data.detail;
+          else if (res.data && typeof res.data === 'object') errorMsg += JSON.stringify(res.data);
+          mostrarError(errorMsg);
         }
       })
-      .catch(function(err) {
+      .catch(function() {
         if (btnSubmit) {
           btnSubmit.disabled = false;
           btnSubmit.textContent = 'Guardar dirección';
         }
-        if (msgsBox) {
-          msgsBox.innerHTML = '<div style="background-color:#FEF2F2; color:#DC2626; padding:0.75rem 1rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem; margin-bottom:1rem; border:1px solid #FECACA;">Error de conexión con el servidor.</div>';
-        }
+        mostrarError('Error de conexión con el servidor.');
       });
     });
   }

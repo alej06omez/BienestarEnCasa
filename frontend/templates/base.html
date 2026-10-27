@@ -8,6 +8,7 @@
     <title>{% block title %}BienestarEnCasa{% endblock %}</title>
     
     <link rel="stylesheet" href="{% static 'estilos.css' %}?v=1.4">
+    <link rel="icon" href="{% static 'logo.png' %}">
     
     {% block extra_head %}{% endblock %}
 </head>
@@ -177,10 +178,16 @@
         api: {
             login: '/api/auth/iniciar-sesion/',
             servicios: '/api/catalogo/servicios/',
+            categorias: '/api/catalogo/categorias/',
+            misServicios: '/api/catalogo/servicios/mios/',
             registro : '/api/auth/registro/',
             solicitudes: '/api/solicitudes/',
+            solicitud: '/api/solicitudes/{id}/',
             direcciones: '/api/usuarios/direcciones/',
-            direccion: '/api/usuarios/direcciones/{id}/'
+            direccion: '/api/usuarios/direcciones/{id}/',
+            // TODO: confirmar esta ruta contra urls.py (RenovarTokenView).
+            // Sigue el mismo patrón kebab-case que el resto ('iniciar-sesion', 'registro').
+            renovarToken: '/api/auth/renovar-token/'
         },
         pages: {
             solicitudCrear: '/solicitud/crear/{id}/'
@@ -192,6 +199,11 @@
         return pattern.replace('{id}', id);
     };
 
+    // Helper para formatear montos de forma consistente en toda la app
+    window.BEC.dinero = function(monto) {
+        return '$' + Number(monto || 0).toLocaleString('es-CO');
+    };
+
     // Helper para unificar listas devueltas por DRF o paginación
     window.BEC.lista = function(data) {
         if (Array.isArray(data)) return data;
@@ -199,6 +211,43 @@
         if (data && Array.isArray(data.resultados)) return data.resultados;
         return [];
     };
+
+    // CookieJWTAuthentication llama a SessionAuthentication().enforce_csrf(request)
+    // en cada petición, así que todo método "inseguro" (POST/PUT/PATCH/DELETE)
+    // necesita el header X-CSRFToken, igual que con autenticación por sesión.
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    var METODOS_SEGUROS = ['GET', 'HEAD', 'OPTIONS', 'TRACE'];
+
+    // Intenta renovar el access usando la cookie 'refresh' (httpOnly),
+    // vía RenovarTokenView. No pasa por BEC.api para no generar recursión.
+    // Devuelve true si la renovación fue exitosa (cookies nuevas ya puestas
+    // por el navegador), false en cualquier otro caso.
+    async function intentarRenovarToken() {
+        try {
+            var res = await fetch(window.BEC.cfg.api.renovarToken, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Accept': 'application/json' }
+            });
+            return res.ok;
+        } catch (e) {
+            return false;
+        }
+    }
 
     // ==============================================================
     // FUNCIÓN GLOBAL PARA CONSUMIR LA API (CON INTERCEPTOR DE LOGIN)
@@ -224,6 +273,18 @@
         // 2. Fundamental si usas CookieJWTAuthentication en Django
         options.credentials = 'include';
 
+        // 2.1 CSRF: requerido en métodos inseguros porque enforce_csrf()
+        //     se ejecuta dentro de CookieJWTAuthentication.authenticate().
+        var metodo = (options.method || 'GET').toUpperCase();
+        if (METODOS_SEGUROS.indexOf(metodo) === -1 && !options.headers['X-CSRFToken']) {
+            var csrf = getCookie('csrftoken');
+            if (csrf) {
+                options.headers['X-CSRFToken'] = csrf;
+            } else {
+                console.warn('No se encontró la cookie csrftoken. Verifica que la página haya cargado {% csrf_token %} o use ensure_csrf_cookie.');
+            }
+        }
+
         // 3. Permite que endpoints donde un 401/403 es una respuesta
         //    válida (login, registro) desactiven el interceptor y
         //    manejen el error ellos mismos.
@@ -231,9 +292,27 @@
 
         try {
             const response = await fetch(url, options);
+            const esReintento = options._esReintento === true;
 
-            // 4. INTERCEPTOR DE AUTENTICACIÓN (401 Unauthorized / 403 Forbidden)
-            if (redirectOn401 && (response.status === 401 || response.status === 403)) {
+            // 4. Un 401 puede ser solo un access vencido, no una sesión
+            //    realmente caída. Antes de rendirnos, intentamos renovar
+            //    con la cookie 'refresh' y reintentar UNA vez.
+            if (redirectOn401 && response.status === 401 && !esReintento) {
+                var renovado = await intentarRenovarToken();
+                if (renovado) {
+                    return window.BEC.api(url, Object.assign({}, options, { _esReintento: true }));
+                }
+            }
+
+            // 5. INTERCEPTOR DE AUTENTICACIÓN (solo 401 Unauthorized)
+            //    El 403 Forbidden NO se intercepta aquí: en este backend
+            //    significa "estás autenticado pero no tienes permiso para
+            //    esto" (ver PermissionDenied en views.py), no una sesión
+            //    caída. Cada formulario debe mostrar ese error con su
+            //    propio mensaje, usando res.status === 403.
+            //    Si llegamos aquí tras un reintento, es porque la
+            //    renovación también falló: ahí sí es sesión caída de verdad.
+            if (redirectOn401 && response.status === 401) {
                 console.warn("Sesión expirada o no iniciada. Redirigiendo...");
 
                 // Limpiamos los datos del usuario del localStorage
@@ -472,6 +551,7 @@
         } catch(e) {}
     });
 })();
+    
 </script>
 
     <!-- Estilos CSS Modal -->

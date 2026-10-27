@@ -160,7 +160,7 @@ class DireccionListCreateView(generics.ListCreateAPIView):
         )
 
 
-class DireccionDetalleView(generics.RetrieveUpdateAPIView):
+class DireccionDetalleView(generics.RetrieveUpdateDestroyAPIView):  # <-- aquí el cambio
     serializer_class = DireccionSerializer
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -193,6 +193,16 @@ class DireccionDetalleView(generics.RetrieveUpdateAPIView):
                 )
 
         serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.es_principal:
+            siguiente = Direccion.objects.filter(
+                usuario=self.request.user
+            ).exclude(pk=instance.pk).order_by('-creado_en').first()
+            if siguiente:
+                siguiente.es_principal = True
+                siguiente.save(update_fields=['es_principal'])
+        instance.delete()
 
 
 class MiPerfilProveedorView(APIView):
