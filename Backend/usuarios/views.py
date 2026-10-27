@@ -7,14 +7,15 @@ from rest_framework_simplejwt.settings import api_settings as jwt_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError, NotAuthenticated, AuthenticationFailed
 from .models import Direccion, PerfilProveedor, PerfilUsuario, ZonaAtencion, SesionActiva
 from .authentication import CookieJWTAuthentication  # <--- HABILITA LECTURA DE COOKIE JWT
 
+from rest_framework.permissions import IsAuthenticated
 from catalogo.models import Servicio
 from django.db.models import Prefetch
 from django.http import Http404
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .serializers import (
     ProveedorPublicoSerializer, ZonaAtencionSerializer, PerfilProveedorSerializer,
     ActualizarPerfilSerializer, DireccionSerializer, InicioSesionSerializer,

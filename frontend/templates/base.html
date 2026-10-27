@@ -200,63 +200,82 @@
         return [];
     };
 
-    // Helper centralizado de Peticiones API con token Bearer
-    window.BEC.api = function(url, options) {
-        options = options || {};
-        options.headers = options.headers || {};
+    // ==============================================================
+    // FUNCIÓN GLOBAL PARA CONSUMIR LA API (CON INTERCEPTOR DE LOGIN)
+    // ==============================================================
+    window.BEC.api = async function(url, options = {}) {
+        // 1. Configuración de cabeceras por defecto
+        const isFormData = options.body instanceof FormData;
+        const defaultHeaders = {
+            'Accept': 'application/json',
+        };
 
-        function getCookie(name) {
-            var cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                var cookies = document.cookie.split(';');
-                for (var i = 0; i < cookies.length; i++) {
-                    var cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+        // Si no es un archivo (FormData), asumimos que es JSON
+        if (!isFormData) {
+            defaultHeaders['Content-Type'] = 'application/json';
+            // Convertir el body a string si es un objeto
+            if (options.body && typeof options.body === 'object') {
+                options.body = JSON.stringify(options.body);
             }
-            return cookieValue;
         }
 
-        var csrf = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
-        if (csrf && !options.headers['X-CSRFToken']) {
-            options.headers['X-CSRFToken'] = csrf;
-        }
+        options.headers = { ...defaultHeaders, ...options.headers };
 
-        if (!options.headers['Content-Type'] && !(options.body instanceof FormData)) {
-            options.headers['Content-Type'] = 'application/json';
-        }
+        // 2. Fundamental si usas CookieJWTAuthentication en Django
+        options.credentials = 'include';
 
-        options.headers['Accept'] = 'application/json';
-        
+        // 3. Permite que endpoints donde un 401/403 es una respuesta
+        //    válida (login, registro) desactiven el interceptor y
+        //    manejen el error ellos mismos.
+        const redirectOn401 = options.redirectOn401 !== false;
 
         try {
-            var perfil = JSON.parse(localStorage.getItem('bec_perfil') || '{}');
-            var token = perfil.access || perfil.token || perfil.access_token;
-            if (token) {
-                options.headers['Authorization'] = 'Bearer ' + token;
+            const response = await fetch(url, options);
+
+            // 4. INTERCEPTOR DE AUTENTICACIÓN (401 Unauthorized / 403 Forbidden)
+            if (redirectOn401 && (response.status === 401 || response.status === 403)) {
+                console.warn("Sesión expirada o no iniciada. Redirigiendo...");
+
+                // Limpiamos los datos del usuario del localStorage
+                localStorage.removeItem('bec_perfil');
+                localStorage.removeItem('bec_foto_perfil');
+
+                // Redirigir a la página principal
+                window.location.href = '/';
+
+                // Retornamos una promesa rechazada para detener la ejecución en la vista
+                return Promise.reject('No autenticado');
             }
-        } catch(e) {}
 
-        options.credentials = 'same-origin';
+            // 5. Parsear la respuesta
+            let data = null;
+            if (response.status !== 204) { // 204 es "No Content" (sin body)
+                 try {
+                     data = await response.json();
+                 } catch(err) {
+                     console.warn("La respuesta no contiene JSON válido.");
+                 }
+            }
 
-        if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
-            options.body = JSON.stringify(options.body);
+            // 6. Retornamos la estructura que el resto de tus scripts ya esperan
+            return {
+                ok: response.ok,
+                status: response.status,
+                data: data
+            };
+
+        } catch (error) {
+            console.error('Error de red en BEC.api:', error);
+            throw error; // Propaga el error por si quieres manejarlo en el .catch() de tus vistas
         }
-
-        return fetch(url, options).then(function(res) {
-            return res.json().then(function(data) {
-                return { ok: res.ok, status: res.status, data: data };
-            }).catch(function() {
-                return { ok: res.ok, status: res.status, data: null };
-            });
-        });
     };
 
+    // Cierre de sesión: limpia el estado local. La cookie httpOnly
+    // la invalida el backend si llamas antes a CerrarSesionView;
+    // aquí solo se limpia lo que el frontend puede ver/borrar.
     window.BEC.cerrarSesion = function() {
         localStorage.removeItem('bec_perfil');
+        localStorage.removeItem('bec_foto_perfil');
         window.location.href = "{% url 'pagina-inicio' %}";
     };
 
@@ -304,14 +323,14 @@
         var btnSubmit = document.getElementById('btnSubmitLogin');
 
         var formRegistroModal = document.getElementById('registroFormModal');
-        
+
         if (formRegistroModal) {
             formRegistroModal.addEventListener('submit', function(e) {
                 e.preventDefault(); // Detiene la recarga de la página
-                
+
                 var msgBoxReg = document.getElementById('mensajesRegistroModal');
                 var btnSubmitReg = formRegistroModal.querySelector('button[type="submit"]');
-                
+
                 // Capturamos los datos
                 var datos = {
                     nombres: formRegistroModal.nombres.value.trim(),
@@ -335,8 +354,8 @@
                     btnSubmitReg.textContent = 'Creando cuenta...';
                 }
 
-                // Enviar al backend
-                window.BEC.api(window.BEC.cfg.api.registro, { method: 'POST', body: datos })
+                // Enviar al backend (registro es AllowAny: no requiere el interceptor de 401)
+                window.BEC.api(window.BEC.cfg.api.registro, { method: 'POST', body: datos, redirectOn401: false })
                 .then(function(res) {
                     if (btnSubmitReg) {
                         btnSubmitReg.disabled = false;
@@ -400,14 +419,18 @@
                 btnSubmit.disabled = true;
                 btnSubmit.textContent = 'Autenticando...';
 
+                // redirectOn401: false -> un 401 aquí es "credenciales inválidas",
+                // no una sesión caída, así que lo mostramos en el modal en vez
+                // de dejar que el interceptor global redirija a '/'.
                 window.BEC.api(window.BEC.cfg.api.login, {
                     method: 'POST',
-                    body: { email: email, password: password }
+                    body: { email: email, password: password },
+                    redirectOn401: false
                 }).then(function(res) {
                     if (res.ok) {
                         var usuario = res.data.perfil || res.data.usuario || res.data.user || res.data;
                         if (res.data.access) usuario.access = res.data.access;
-                        
+
                         localStorage.setItem('bec_perfil', JSON.stringify(usuario));
                         var rol = (usuario && usuario.rol) ? usuario.rol.toUpperCase() : '';
 

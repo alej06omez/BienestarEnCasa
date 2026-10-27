@@ -42,6 +42,11 @@
           border-color: #2563eb;
           box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
+        .fieldset-oculto {
+          border: none;
+          margin: 0;
+          padding: 0;
+        }
       </style>
 
       <!-- Columna Izquierda: Formulario -->
@@ -70,18 +75,43 @@
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-            <div>
+            <div> 
               <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.4rem;">
                 Ciudad <span style="color: #ef4444;">*</span>
-              </label>
-              <input type="text" id="inputCiudad" name="ciudad" class="form-input-field" placeholder="Ej: Cali" required>
+              </label><fieldset class="fieldset-oculto" disabled>
+              <input type="text" id="inputCiudad" name="ciudad" value="Cali" class="form-input-field" placeholder="Ej: Cali" required></fieldset>
             </div>
 
             <div>
               <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.4rem;">
                 Barrio / Sector <span style="color: #ef4444;">*</span>
               </label>
-              <input type="text" id="inputBarrio" name="barrio_sector" class="form-input-field" placeholder="Ej: San Fernando" required>
+              <select type="text" id="inputBarrio" name="barrio_sector" class="form-input-field" placeholder="Ej: San Fernando" required>
+                <option value="">-- Selecciona un sector o barrio --</option>
+              <option value="san_fernando">San Fernando</option>
+              <option value="vipasa">Vipasa</option>
+              <option value="terron_colorado">Terron Colorado</option>
+              <option value="san_antonio">San Antonio</option>
+              <option value="manzanares">Manzanares</option>
+              <option value="rivera">Rivera</option>
+              <option value="los_guaduales">Los Guaduales</option>
+              <option value="alfonoso_lopez">Alfonso Lopez</option>
+              <option value="las_americas">Las Americas</option>
+              <option value="guayaquil">Guayaquil</option>
+              <option value="guabal">Guabal</option>
+              <option value="san_carlos">San Carlos</option>
+              <option value="nueva_floresta">Nueva Floresta</option>
+              <option value="lleras_restrepo">Lleras Restrepo</option>
+              <option value="alfonso_bonilla">Alfonso Bonilla</option>
+              <option value="el_vallado">El Vallado</option>
+              <option value="la_union">La Unidad</option>
+              <option value="el_limonar">El Limonar</option>
+              <option value="melendez">Meléndez</option>
+              <option value="el_cedro">El Cedro</option>
+              <option value="siloe">Siloe</option>
+              <option value="desepaz">Desepaz</option>
+              <option value="ciudad_jardin_pance">Ciudad Jardin y Pance</option>
+          </select>
             </div>
           </div>
 
