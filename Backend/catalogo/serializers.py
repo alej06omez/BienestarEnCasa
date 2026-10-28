@@ -44,9 +44,14 @@ class ContenidoMultimediaServicioSerializer(serializers.ModelSerializer):
 
 
 class ServicioSerializer(serializers.ModelSerializer):
+    ESTADO_CHOICES = (
+            ('activo', 'Activo'),
+            ('inactivo', 'Inactivo'),
+        )
     # Permite que la descripción sea opcional y acepte textos vacíos
     descripcion = serializers.CharField(required=False, allow_blank=True, default='')
-
+    estado = serializers.ChoiceField(choices=ESTADO_CHOICES, default='activo')
+    
     #aqui asocia todo lo que le pertenece al coso
     elementos = ElementoServicioSerializer(many=True, read_only=True)
     multimedia = ContenidoMultimediaServicioSerializer(many=True, read_only=True)
