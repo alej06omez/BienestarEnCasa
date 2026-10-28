@@ -75,6 +75,15 @@
         </div>
       </div>
 
+      <div>
+        <label style="display:  block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estado del Servicio</label>
+        <select name="selectEstadoServicio" id="selectEstadoServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; background: #fff;">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+        
+      </div>
+
       <div style="margin-bottom: 1.5rem;">
         <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Descripción del servicio (opcional)</label>
         <textarea id="inputDescServicio" rows="3" placeholder="Detalla lo que incluye el servicio..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; resize: vertical;"></textarea>
@@ -200,6 +209,13 @@ document.addEventListener('DOMContentLoaded', function() {
           const precio = window.BEC && window.BEC.dinero ? window.BEC.dinero(s.precio) : ('$' + Number(s.precio || 0).toLocaleString('es-CO'));
           const duracion = s.duracion_minutos || s.duracion || 60;
           const categoria = (s.categoria && typeof s.categoria === 'object') ? (s.categoria.nombre || 'VARIOS') : (s.categoria_nombre || 'VARIOS');
+          
+          // Nueva línea para evaluar el estado (soporta booleanos y strings)
+          const esActivo = (s.estado === true || String(s.estado).toLowerCase() === 'activo');
+          const textoEstado = esActivo ? 'Activo' : 'Inactivo';
+          const bgColor = esActivo ? '#f0fdf4' : '#fef2f2';
+          const textColor = esActivo ? '#166534' : '#991b1b';
+          const borderColor = esActivo ? '#bbf7d0' : '#fecaca';
 
           return `
             <div id="card-servicio-${s.id}" style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
@@ -216,8 +232,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="background-color: #f0fdf4; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; border: 1px solid #bbf7d0;">
-                    Activo
+                  <span style="background-color: ${bgColor}; color: ${textColor}; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; border: 1px solid ${borderColor};">
+                      ${textoEstado}
                   </span>
 
                   <!-- BOTÓN ELIMINAR SERVICIO -->
@@ -244,11 +260,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const categoriaVal = document.getElementById('selectCategoriaServicio').value;
       const precioVal = document.getElementById('inputPrecioServicio').value;
       const duracionVal = document.getElementById('inputDuracionServicio').value;
+      const estadoVal = document.getElementById('selectEstadoServicio').value
 
       const descElem = document.getElementById('inputDescServicio');
       const descripcionVal = descElem ? descElem.value.trim() : "";
 
-      if (!nombreVal || !categoriaVal || !precioVal || !duracionVal) {
+      if (!nombreVal || !categoriaVal || !precioVal || !duracionVal || !estadoVal) {
         mostrarErrorModal('Completa los campos obligatorios (*).');
         return;
       }
@@ -258,7 +275,8 @@ document.addEventListener('DOMContentLoaded', function() {
         categoria: parseInt(categoriaVal),
         precio: parseFloat(precioVal),
         duracion_minutos: parseInt(duracionVal),
-        descripcion: descripcionVal
+        descripcion: descripcionVal,
+        estado: estadoVal
       };
 
       window.BEC.api(window.BEC.cfg.api.servicios, {
