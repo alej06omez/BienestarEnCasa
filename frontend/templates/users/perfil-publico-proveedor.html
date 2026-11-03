@@ -216,10 +216,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const zonas = document.getElementById('zonasProveedor');
       if (Array.isArray(proveedor.zonas_atencion) && proveedor.zonas_atencion.length) {
-        proveedor.zonas_atencion.forEach(function (zona) {
-          const texto = [zona.barrio_sector, zona.ciudad].filter(Boolean).join(', ');
-          zonas.appendChild(crearElemento('span', texto || 'Zona de atención', 'zona-item'));
-        });
+          proveedor.zonas_atencion.forEach(function (zona) {
+              const texto = [zona.barrio_sector, zona.ciudad]
+                  .filter(Boolean)
+                  .map(valor =>
+                      valor
+                          .replace(/_/g, ' ')
+                          .replace(/\b\w/g, letra => letra.toUpperCase())
+                  )
+                  .join(', ');
+
+              zonas.appendChild(
+                  crearElemento('span', texto || 'Zona de atención', 'zona-item')
+              );
+          });
       } else {
         zonas.appendChild(crearElemento('p', 'El proveedor aún no ha registrado zonas de atención.'));
       }
