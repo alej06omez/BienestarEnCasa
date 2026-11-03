@@ -157,22 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
       tarjeta.appendChild(bloque);
     }
 
-    if (Array.isArray(servicio.multimedia) && servicio.multimedia.length) {
-      const multimedia = document.createElement('div');
-      multimedia.className = 'multimedia-servicio';
-      servicio.multimedia.forEach(function (archivo) {
-        if (!archivo.archivo) return;
-        const enlace = document.createElement('a');
-        enlace.href = archivo.archivo;
-        enlace.target = '_blank';
-        enlace.rel = 'noopener noreferrer';
-        enlace.textContent = archivo.descripcion || 'Ver contenido del servicio';
-        multimedia.appendChild(enlace);
-        multimedia.appendChild(document.createElement('br'));
-      });
-      tarjeta.appendChild(multimedia);
-    }
-
     return tarjeta;
   }
 
