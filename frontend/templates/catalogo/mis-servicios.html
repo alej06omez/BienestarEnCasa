@@ -96,6 +96,32 @@
   </div>
 </div>
 
+<!-- Modal Personalizado de Confirmación de Eliminación -->
+<div id="modalEliminarServicio" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 24rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; border: 1px solid #e2e8f0;">
+    
+    <div style="width: 3rem; height: 3rem; background-color: #fef2f2; color: #ef4444; border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+      <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+      </svg>
+    </div>
+
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">¿Eliminar este Servicio?</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1.5rem 0; line-height: 1.4;">
+      ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
+    </p>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarModalServicio" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Cancelar
+      </button>
+      <button type="button" id="btnConfirmarModalServicio" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Eliminar
+      </button>
+    </div>
+
+  </div>
+</div>
 <script>
 // Requiere que bec-core.js se cargue ANTES que este archivo.
 // Página privada: solo un proveedor autenticado debe ver/gestionar
@@ -129,35 +155,80 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Función global para eliminar servicio con petición DELETE
-  window.eliminarServicio = function(servicioId, nombreServicio) {
-    if (!confirm('¿Estás seguro de que deseas eliminar el servicio "' + nombreServicio + '"?')) {
-      return;
-    }
+  // Referencias al modal y sus botones (verifica que los IDs coincidan exactamente con tu HTML)
+  var modalEliminarServicio = document.getElementById('modalEliminarServicio');
+  var btnCancelarModalServicio = document.getElementById('btnCancelarModalServicio'); 
+  var btnConfirmarModalServicio = document.getElementById('btnConfirmarModalServicio'); 
+  
+  // Variable de estado para almacenar el ID temporalmente
+  var servicioIdAEliminar = null;
 
-    window.BEC.api(window.BEC.url(window.BEC.cfg.api.servicios + '{id}/', servicioId), {
-      method: 'DELETE'
-    })
-    .then(function(res) {
-      if (res.ok || res.status === 204) {
-        var card = document.getElementById('card-servicio-' + servicioId);
-        if (card) {
-          card.remove();
-        } else {
-          cargarServiciosProveedor();
-        }
-      } else if (res.status === 405) {
-        alert('Esta operación aún no está habilitada en el servidor (revisa que la vista del servicio permita DELETE).');
-      } else if (res.status === 403) {
-        alert('No tienes permiso para eliminar este servicio.');
-      } else {
-        alert('No se pudo eliminar el servicio.');
-      }
-    })
-    .catch(function(err) {
-      console.error('Error al eliminar servicio:', err);
-      alert('Error de conexión al intentar eliminar el servicio.');
-    });
+  // 1. Modificar la función para abrir el modal en lugar del confirm()
+  window.eliminarServicio = function(servicioId, nombreServicio) {
+    if (!servicioId) return;
+    servicioIdAEliminar = servicioId;
+    
+    // Opcional: Si agregas un span con id="nombreServicioModal" en tu HTML, 
+    // puedes actualizar dinámicamente el nombre del servicio a eliminar.
+    var nombreElement = document.getElementById('nombreServicioModal');
+    if (nombreElement) {
+        nombreElement.textContent = nombreServicio;
+    }
+    
+    modalEliminarServicio.style.display = 'flex';
   };
+
+  // 2. Lógica para el botón Cancelar
+  if (btnCancelarModalServicio) {
+    btnCancelarModalServicio.addEventListener('click', function() {
+      modalEliminarServicio.style.display = 'none';
+      servicioIdAEliminar = null; // Limpiar el ID
+    });
+  }
+
+  // 3. Lógica para procesar la eliminación al Confirmar
+  if (btnConfirmarModalServicio) {
+    btnConfirmarModalServicio.addEventListener('click', function() {
+      if (!servicioIdAEliminar) return;
+
+      // Proveer retroalimentación visual
+      var textoOriginal = btnConfirmarModalServicio.textContent;
+      btnConfirmarModalServicio.textContent = 'Eliminando...';
+      btnConfirmarModalServicio.disabled = true;
+
+      window.BEC.api(window.BEC.url(window.BEC.cfg.api.servicios + '{id}/', servicioIdAEliminar), {
+        method: 'DELETE'
+      })
+      .then(function(res) {
+        if (res.ok || res.status === 204) {
+          // Eliminar la tarjeta del DOM o recargar la lista
+          var card = document.getElementById('card-servicio-' + servicioIdAEliminar);
+          if (card) {
+            card.remove();
+          } else if (typeof cargarServiciosProveedor === 'function') {
+            cargarServiciosProveedor();
+          }
+        } else if (res.status === 405) {
+          alert('Esta operación aún no está habilitada en el servidor (revisa que la vista del servicio permita DELETE).');
+        } else if (res.status === 403) {
+          alert('No tienes permiso para eliminar este servicio.');
+        } else {
+          alert('No se pudo eliminar el servicio.');
+        }
+      })
+      .catch(function(err) {
+        console.error('Error al eliminar servicio:', err);
+        alert('Error de conexión al intentar eliminar el servicio.');
+      })
+      .finally(function() {
+        // Restaurar el modal y el botón a su estado original
+        modalEliminarServicio.style.display = 'none';
+        servicioIdAEliminar = null;
+        btnConfirmarModalServicio.textContent = textoOriginal;
+        btnConfirmarModalServicio.disabled = false;
+      });
+    });
+  }
 
   if (grid) {
     grid.addEventListener('click', function(evento) {
