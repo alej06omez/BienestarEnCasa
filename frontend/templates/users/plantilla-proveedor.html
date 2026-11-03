@@ -615,26 +615,125 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
-  window.contraproponer = function(id) {
-    const nuevaHora = prompt("Ingresa la nueva hora propuesta (ej: 10:30 AM):");
-    if (!nuevaHora) return;
+  // Referencias al DOM del modal de contrapropuesta
+  var modalContraproponer = document.getElementById('modalContraproponer');
+  var btnCancelarContrapropuesta = document.getElementById('btnCancelarContrapropuesta');
+  var btnConfirmarContrapropuesta = document.getElementById('btnConfirmarContrapropuesta');
+  
+  var solicitudIdContrapropuesta = null;
 
-    window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitud, id), {
-      method: 'PATCH',
-      body: { hora_solicitada: nuevaHora, observaciones: "Cambio de hora solicitado por el proveedor" }
-    }).then(function(res) {
-      if (!res.ok) {
-        var detalle = (res.data && res.data.detail) ? res.data.detail : 'Inténtalo de nuevo.';
-        alert('No se pudo proponer la nueva hora: ' + detalle);
-        return;
-      }
-      cargarDatosProveedor();
-    }).catch(function() {
-      alert('Error de conexión al proponer la nueva hora.');
-    });
+  // 1. Abrir el modal
+  window.contraproponer = function(id) {
+    if (!id) return;
+    solicitudIdContrapropuesta = id;
+    
+    // Opcional: Reiniciar los selects a valores por defecto cada vez que se abre
+    document.getElementById('selectHora').value = '10';
+    document.getElementById('selectMinuto').value = '00';
+    document.getElementById('selectAmPm').value = 'AM';
+
+    modalContraproponer.style.display = 'flex';
   };
 
+  // 2. Cerrar el modal
+  if (btnCancelarContrapropuesta) {
+    btnCancelarContrapropuesta.addEventListener('click', function() {
+      modalContraproponer.style.display = 'none';
+      solicitudIdContrapropuesta = null;
+    });
+  }
+
+  // 3. Procesar la contrapropuesta
+  if (btnConfirmarContrapropuesta) {
+    btnConfirmarContrapropuesta.addEventListener('click', function() {
+      if (!solicitudIdContrapropuesta) return;
+
+      // Armar la hora en formato string "10:30 AM"
+      var hora = document.getElementById('selectHora').value;
+      var minuto = document.getElementById('selectMinuto').value;
+      var ampm = document.getElementById('selectAmPm').value;
+      var nuevaHoraFormat = hora + ':' + minuto + ' ' + ampm;
+
+      // Estado de carga en el botón
+      var textoOriginal = btnConfirmarContrapropuesta.textContent;
+      btnConfirmarContrapropuesta.textContent = 'Enviando...';
+      btnConfirmarContrapropuesta.disabled = true;
+
+      window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitud, solicitudIdContrapropuesta), {
+        method: 'PATCH',
+        body: { hora_solicitada: nuevaHoraFormat, observaciones: "Cambio de hora solicitado por el proveedor" }
+      }).then(function(res) {
+        if (!res.ok) {
+          var detalle = (res.data && res.data.detail) ? res.data.detail : 'Inténtalo de nuevo.';
+          alert('No se pudo proponer la nueva hora: ' + detalle);
+          return;
+        }
+        
+        // Cerrar modal tras éxito
+        modalContraproponer.style.display = 'none';
+        
+        // Recargar datos (asegúrate de que esta función existe en tu entorno)
+        if (typeof cargarDatosProveedor === 'function') {
+          cargarDatosProveedor();
+        }
+      }).catch(function() {
+        alert('Error de conexión al proponer la nueva hora.');
+      }).finally(function() {
+        // Restaurar estado
+        btnConfirmarContrapropuesta.textContent = textoOriginal;
+        btnConfirmarContrapropuesta.disabled = false;
+        solicitudIdContrapropuesta = null;
+      });
+    });
+  }
   cargarCatalogoServicios();
 });
 </script>
+<!-- Modal Contraproponer Horario -->
+<div id="modalContraproponer" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 24rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; border: 1px solid #e2e8f0;">
+    
+    <div style="width: 3rem; height: 3rem; background-color: #eff6ff; color: #3b82f6; border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+      <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">Proponer nuevo horario</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1.5rem 0; line-height: 1.4;">
+      Selecciona la hora propuesta para el servicio.
+    </p>
+
+    <!-- Selectores de tiempo -->
+    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem;">
+      <select id="selectHora" style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background-color: #f8fafc; font-size: 1rem; color: #0f172a; outline: none; cursor: pointer;">
+        <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+        <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+        <option value="07">07</option><option value="08">08</option><option value="09">09</option>
+        <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+      </select>
+      <span style="font-size: 1.25rem; font-weight: 700; color: #0f172a; display: flex; align-items: center;">:</span>
+      <select id="selectMinuto" style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background-color: #f8fafc; font-size: 1rem; color: #0f172a; outline: none; cursor: pointer;">
+        <option value="00">00</option>
+        <option value="15">15</option>
+        <option value="30">30</option>
+        <option value="45">45</option>
+      </select>
+      <select id="selectAmPm" style="padding: 0.5rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; background-color: #f8fafc; font-size: 1rem; color: #0f172a; outline: none; cursor: pointer; margin-left: 0.5rem;">
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarContrapropuesta" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Cancelar
+      </button>
+      <button type="button" id="btnConfirmarContrapropuesta" style="flex: 1; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Confirmar
+      </button>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

@@ -22,6 +22,16 @@
                 <span style="font-size: 1.2rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">BienestarEnCasa</span>
             </a>
             
+            <!-- Botón Hamburguesa (Oculto por defecto) -->
+            <!-- Botón Hamburguesa -->
+            <button type="button" class="btn-menu-mobile" id="btnMenuMobile" aria-label="Abrir menú">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1A68FF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <!-- Navegación Principal -->
             <nav class="main-nav" aria-label="Navegación principal">
                 {% block header_nav %}
                     <ul class="nav-list" id="global-nav-list">
@@ -352,19 +362,33 @@
         text-decoration: underline;
     }
     
-    .main-nav ul, .nav-list {
-    display: flex !important;
-    align-items: center !important;
-    gap: 1.25rem !important;
-    list-style: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
+    @media (min-width: 769px) {
+        .main-nav ul, .nav-list {
+            display: flex !important;
+            align-items: center !important;
+            gap: 1.25rem !important;
+            list-style: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
 
-.nav-link {
-    white-space: nowrap !important;
-}
-    </style>
+    .nav-link {
+        white-space: nowrap !important;
+    }
+</style>
     {% block extra_body %}{% endblock %}
+    <script>
+        document.addEventListener('click', function(e) {
+            const btnHamburguesa = e.target.closest('#btnMenuMobile');
+            if (btnHamburguesa) {
+                // Buscamos específicamente la lista dentro de main-nav
+                const navList = document.querySelector('.main-nav .nav-list');
+                if (navList) {
+                    navList.classList.toggle('mostrar-menu');
+                }
+            }
+        });
+    </script>
 </body>
 </html>

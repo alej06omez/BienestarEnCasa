@@ -129,7 +129,7 @@
             </label>
           </div>
 
-          <button type="submit" id="btnGuardarDireccion" style="width: 100%; background-color: #0F172A; color: #ffffff; font-weight: 700; padding: 0.8rem; border-radius: 0.75rem; border: none; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s ease;">
+          <button type="submit" id="btnGuardarDireccion" style="width: 100%; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.8rem; border-radius: 0.75rem; border: none; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s ease;">
             Guardar dirección
           </button>
         </form>
@@ -154,6 +154,33 @@
       </div>
 
     </div>
+  </div>
+</div>
+
+<!-- Modal Personalizado de Confirmación de Eliminación -->
+<div id="modalEliminarZona" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 24rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; border: 1px solid #e2e8f0;">
+    
+    <div style="width: 3rem; height: 3rem; background-color: #fef2f2; color: #ef4444; border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
+      <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+      </svg>
+    </div>
+
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">¿Eliminar esta dirección?</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1.5rem 0; line-height: 1.4;">
+      ¿Estás seguro de que deseas eliminar esta dirección? Esta acción no se puede deshacer.
+    </p>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarModalZona" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Cancelar
+      </button>
+      <button type="button" id="btnConfirmarModalZona" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+        Eliminar
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -195,7 +222,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     contenedor.innerHTML = lista.map(function(dir) {
-      var barrio = dir.barrio || '';
+      var barrio = (dir.barrio || '')
+        .toLowerCase()
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, letra => letra.toUpperCase());
       var comp = dir.complemento || '';
 
       return `
@@ -266,24 +296,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
   cargarDirecciones();
 
-  window.eliminarDireccion = function(id) {
-    if (!id || !confirm('¿Deseas eliminar esta dirección?')) return;
+  // Referencias al modal y sus botones
+  var modalEliminar = document.getElementById('modalEliminarZona');
+  var btnCancelarModal = document.getElementById('btnCancelarModalZona');
+  var btnConfirmarModal = document.getElementById('btnConfirmarModalZona');
+  var direccionIdAEliminar = null;
 
-    window.BEC.api('/api/usuarios/direcciones/' + id + '/', { method: 'DELETE' })
-      .then(function(res) {
-        if (res.ok || res.status === 204) {
-          cargarDirecciones();
-        } else if (res.status === 405) {
-          alert('Esta operación aún no está habilitada en el servidor.');
-        } else {
-          alert('No se pudo eliminar la dirección.');
-        }
-      })
-      .catch(function() {
-        alert('Error de conexión al eliminar.');
-      });
+  // 1. Modificar la función para mostrar el modal en lugar de confirm()
+  window.eliminarDireccion = function(id) {
+    if (!id) return;
+    direccionIdAEliminar = id;
+    modalEliminar.style.display = 'flex';
   };
 
+  // 2. Lógica para el botón Cancelar
+  if (btnCancelarModal) {
+    btnCancelarModal.addEventListener('click', function() {
+      modalEliminar.style.display = 'none';
+      direccionIdAEliminar = null;
+    });
+  }
+
+  // 3. Lógica para procesar la eliminación al Confirmar
+  if (btnConfirmarModal) {
+    btnConfirmarModal.addEventListener('click', function() {
+      if (!direccionIdAEliminar) return;
+
+      var textoOriginal = btnConfirmarModal.textContent;
+      btnConfirmarModal.textContent = 'Eliminando...';
+      btnConfirmarModal.disabled = true;
+
+      window.BEC.api('/api/usuarios/direcciones/' + direccionIdAEliminar + '/', { method: 'DELETE' })
+        .then(function(res) {
+          if (res.ok || res.status === 204) {
+            cargarDirecciones();
+            mostrarExito('Dirección eliminada correctamente.');
+          } else if (res.status === 405) {
+            alert('Esta operación aún no está habilitada en el servidor.');
+          } else {
+            alert('No se pudo eliminar la dirección.');
+          }
+        })
+        .catch(function() {
+          alert('Error de conexión al eliminar.');
+        })
+        .finally(function() {
+          // Restaurar modal y botón
+          modalEliminar.style.display = 'none';
+          direccionIdAEliminar = null;
+          btnConfirmarModal.textContent = textoOriginal;
+          btnConfirmarModal.disabled = false;
+        });
+    });
+  }
   if (form) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();

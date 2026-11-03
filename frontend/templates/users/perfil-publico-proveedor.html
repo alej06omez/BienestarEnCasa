@@ -157,22 +157,6 @@ document.addEventListener('DOMContentLoaded', function () {
       tarjeta.appendChild(bloque);
     }
 
-    if (Array.isArray(servicio.multimedia) && servicio.multimedia.length) {
-      const multimedia = document.createElement('div');
-      multimedia.className = 'multimedia-servicio';
-      servicio.multimedia.forEach(function (archivo) {
-        if (!archivo.archivo) return;
-        const enlace = document.createElement('a');
-        enlace.href = archivo.archivo;
-        enlace.target = '_blank';
-        enlace.rel = 'noopener noreferrer';
-        enlace.textContent = archivo.descripcion || 'Ver contenido del servicio';
-        multimedia.appendChild(enlace);
-        multimedia.appendChild(document.createElement('br'));
-      });
-      tarjeta.appendChild(multimedia);
-    }
-
     return tarjeta;
   }
 
@@ -216,10 +200,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const zonas = document.getElementById('zonasProveedor');
       if (Array.isArray(proveedor.zonas_atencion) && proveedor.zonas_atencion.length) {
-        proveedor.zonas_atencion.forEach(function (zona) {
-          const texto = [zona.barrio_sector, zona.ciudad].filter(Boolean).join(', ');
-          zonas.appendChild(crearElemento('span', texto || 'Zona de atención', 'zona-item'));
-        });
+          proveedor.zonas_atencion.forEach(function (zona) {
+              const texto = [zona.barrio_sector, zona.ciudad]
+                  .filter(Boolean)
+                  .map(valor =>
+                      valor
+                          .replace(/_/g, ' ')
+                          .replace(/\b\w/g, letra => letra.toUpperCase())
+                  )
+                  .join(', ');
+
+              zonas.appendChild(
+                  crearElemento('span', texto || 'Zona de atención', 'zona-item')
+              );
+          });
       } else {
         zonas.appendChild(crearElemento('p', 'El proveedor aún no ha registrado zonas de atención.'));
       }
