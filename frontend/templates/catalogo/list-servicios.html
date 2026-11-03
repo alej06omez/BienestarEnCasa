@@ -370,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         servicios.forEach(function (s) {
             var urlSolicitud = '/solicitar/' + s.id + '/';
+            var urlDetalleServicio = '/catalogo/' + s.id + '/';
             var catNombre = obtenerNombreCategoria(s);
             var duracion = s.duracion_minutos || s.duracion || 60;
 
@@ -385,7 +386,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="service-price">${formatearDinero(s.precio)}</div>
                             <span class="service-duration">${duracion} min</span>
                         </div>
-                        <a href="${urlSolicitud}" class="btn-request">Solicitar</a>
+                        <div style="display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end;">
+                          <a href="${urlDetalleServicio}" class="btn-detail">Ver detalle</a>
+                          <a href="${urlSolicitud}" class="btn-request">Solicitar</a>
+                        </div>
                     </div>
                 </div>
             `;

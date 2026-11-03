@@ -323,11 +323,12 @@ class ZonaAtencionDetalleView(generics.RetrieveDestroyAPIView):
 class ProveedorDetalleView(generics.RetrieveAPIView):
     """Perfil público del proveedor con su catálogo activo (HU-09, HU-10)."""
     serializer_class = ProveedorPublicoSerializer
+    permission_classes = [permissions.AllowAny]
     queryset = PerfilProveedor.objects.select_related('perfil_usuario__usuario').prefetch_related(
         'zonas_atencion',
         Prefetch(
             'servicios',
-            queryset=Servicio.objects.filter(estado=Servicio.Estado.ACTIVO)
+            queryset=Servicio.objects.filter(estado__iexact=Servicio.Estado.ACTIVO)
             .select_related('categoria', 'proveedor__perfil_usuario__usuario')
             .prefetch_related('multimedia', 'elementos'),
         ),
@@ -339,12 +340,12 @@ class ProveedorListaView(generics.ListAPIView):
     Lista y busca proveedores por nombre, apellido o descripción profesional
     para alimentar la sección de búsqueda en el catálogo del cliente.
     """
-    serializer_class = PerfilProveedorSerializer # Trae los servicios de una vez
+    serializer_class = ProveedorPublicoSerializer
     queryset = PerfilProveedor.objects.select_related('perfil_usuario__usuario').prefetch_related(
         'zonas_atencion',
         Prefetch(
             'servicios',
-            queryset=Servicio.objects.filter(estado=Servicio.Estado.ACTIVO)
+            queryset=Servicio.objects.filter(estado__iexact=Servicio.Estado.ACTIVO)
             .select_related('categoria', 'proveedor__perfil_usuario__usuario')
             .prefetch_related('multimedia', 'elementos'),
         ),

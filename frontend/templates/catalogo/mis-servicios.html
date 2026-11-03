@@ -122,6 +122,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function escaparHtml(valor) {
+    return String(valor == null ? '' : valor).replace(/[&<>\"']/g, function(caracter) {
+      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter];
+    });
+  }
+
   // Función global para eliminar servicio con petición DELETE
   window.eliminarServicio = function(servicioId, nombreServicio) {
     if (!confirm('¿Estás seguro de que deseas eliminar el servicio "' + nombreServicio + '"?')) {
@@ -152,6 +158,37 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Error de conexión al intentar eliminar el servicio.');
     });
   };
+
+  if (grid) {
+    grid.addEventListener('click', function(evento) {
+      var botonEstado = evento.target.closest('[data-cambiar-estado]');
+      if (botonEstado) {
+        var id = botonEstado.dataset.cambiarEstado;
+        var nuevoEstado = botonEstado.dataset.estadoActual === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+        botonEstado.disabled = true;
+        window.BEC.api(window.BEC.url(window.BEC.cfg.api.servicio, id), {
+          method: 'PATCH',
+          body: { estado: nuevoEstado }
+        }).then(function(respuesta) {
+          if (respuesta.ok) {
+            cargarServiciosProveedor();
+          } else {
+            botonEstado.disabled = false;
+            alert(respuesta.status === 403 ? 'No tienes permiso para cambiar este servicio.' : 'No se pudo cambiar el estado del servicio.');
+          }
+        }).catch(function() {
+          botonEstado.disabled = false;
+          alert('Error de conexión al cambiar el estado del servicio.');
+        });
+        return;
+      }
+
+      var botonEliminar = evento.target.closest('[data-eliminar-servicio]');
+      if (botonEliminar) {
+        window.eliminarServicio(botonEliminar.dataset.eliminarServicio, botonEliminar.dataset.nombreServicio);
+      }
+    });
+  }
 
   // Cargar Categorías desde la API (lectura pública, pero igual pasa por
   // BEC.api para mantener un único punto de acceso a la red)
@@ -220,9 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
           return `
             <div id="card-servicio-${s.id}" style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
               <div>
-                <span style="background-color: #ccfbf1; color: #0f766e; font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${categoria}</span>
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0.75rem 0 0.35rem 0;">${s.nombre}</h3>
-                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 1.25rem 0; line-height: 1.4;">${s.descripcion || 'Sin descripción.'}</p>
+                <span style="background-color: #ccfbf1; color: #0f766e; font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${escaparHtml(categoria)}</span>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0.75rem 0 0.35rem 0;">${escaparHtml(s.nombre)}</h3>
+                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 1.25rem 0; line-height: 1.4;">${escaparHtml(s.descripcion || 'Sin descripción.')}</p>
               </div>
 
               <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
@@ -231,13 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
                   <span style="font-size: 0.75rem; color: #94a3b8;">${duracion} min</span>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                   <span style="background-color: ${bgColor}; color: ${textColor}; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; border: 1px solid ${borderColor};">
                       ${textoEstado}
                   </span>
 
-                  <!-- BOTÓN ELIMINAR SERVICIO -->
-                  <button type="button" onclick="eliminarServicio(${s.id}, '${s.nombre || 'este servicio'}')" style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+                  <a href="/mis-servicios/${s.id}/editar/" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; text-decoration: none;">Editar</a>
+                  <button type="button" data-cambiar-estado="${s.id}" data-estado-actual="${esActivo ? 'ACTIVO' : 'INACTIVO'}" style="background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer;">${esActivo ? 'Desactivar' : 'Activar'}</button>
+                  <button type="button" data-eliminar-servicio="${s.id}" data-nombre-servicio="${escaparHtml(s.nombre || 'este servicio')}" style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
                     Eliminar
                   </button>
                 </div>
