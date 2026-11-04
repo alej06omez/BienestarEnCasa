@@ -44,7 +44,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
       <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Agregar nuevo servicio</h2>
-      <button type="button" id="btnCerrarModalServicio" style="background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; line-height: 1;">&times;</button>
+      <button type="button" id="btnCerrarModalServicio" style="background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; line-height: 1;">×</button>
     </div>
 
     <div id="msjModalServicio"></div>
@@ -59,7 +59,7 @@
       <div style="margin-bottom: 1rem;">
         <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Categoría *</label>
         <select id="selectCategoriaServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; background: #fff;">
-          <option value="">Cargando categorías...</option>
+          <option value="">-- Selecciona una categoría --</option>
         </select>
       </div>
 
@@ -75,13 +75,12 @@
         </div>
       </div>
 
-      <div>
-        <label style="display:  block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estado del Servicio</label>
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estado del Servicio</label>
         <select name="selectEstadoServicio" id="selectEstadoServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; background: #fff;">
           <option value="activo">Activo</option>
           <option value="inactivo">Inactivo</option>
         </select>
-        
       </div>
 
       <div style="margin-bottom: 1.5rem;">
@@ -122,10 +121,8 @@
 
   </div>
 </div>
+
 <script>
-// Requiere que bec-core.js se cargue ANTES que este archivo.
-// Página privada: solo un proveedor autenticado debe ver/gestionar
-// sus propios servicios, por eso todo aquí pasa por window.BEC.api.
 document.addEventListener('DOMContentLoaded', function() {
   const grid = document.getElementById('gridMisServicios');
   const modal = document.getElementById('modalNuevoServicio');
@@ -149,49 +146,34 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function escaparHtml(valor) {
-    return String(valor == null ? '' : valor).replace(/[&<>\"']/g, function(caracter) {
-      return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter];
-    });
-  }
+  if (valor == null) return '';
+  const div = document.createElement('div');
+  div.textContent = String(valor);
+  return div.innerHTML;
+}
 
-  // Función global para eliminar servicio con petición DELETE
-  // Referencias al modal y sus botones (verifica que los IDs coincidan exactamente con tu HTML)
   var modalEliminarServicio = document.getElementById('modalEliminarServicio');
   var btnCancelarModalServicio = document.getElementById('btnCancelarModalServicio'); 
   var btnConfirmarModalServicio = document.getElementById('btnConfirmarModalServicio'); 
-  
-  // Variable de estado para almacenar el ID temporalmente
   var servicioIdAEliminar = null;
 
-  // 1. Modificar la función para abrir el modal en lugar del confirm()
   window.eliminarServicio = function(servicioId, nombreServicio) {
     if (!servicioId) return;
     servicioIdAEliminar = servicioId;
-    
-    // Opcional: Si agregas un span con id="nombreServicioModal" en tu HTML, 
-    // puedes actualizar dinámicamente el nombre del servicio a eliminar.
-    var nombreElement = document.getElementById('nombreServicioModal');
-    if (nombreElement) {
-        nombreElement.textContent = nombreServicio;
-    }
-    
     modalEliminarServicio.style.display = 'flex';
   };
 
-  // 2. Lógica para el botón Cancelar
   if (btnCancelarModalServicio) {
     btnCancelarModalServicio.addEventListener('click', function() {
       modalEliminarServicio.style.display = 'none';
-      servicioIdAEliminar = null; // Limpiar el ID
+      servicioIdAEliminar = null;
     });
   }
 
-  // 3. Lógica para procesar la eliminación al Confirmar
   if (btnConfirmarModalServicio) {
     btnConfirmarModalServicio.addEventListener('click', function() {
       if (!servicioIdAEliminar) return;
 
-      // Proveer retroalimentación visual
       var textoOriginal = btnConfirmarModalServicio.textContent;
       btnConfirmarModalServicio.textContent = 'Eliminando...';
       btnConfirmarModalServicio.disabled = true;
@@ -201,7 +183,6 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .then(function(res) {
         if (res.ok || res.status === 204) {
-          // Eliminar la tarjeta del DOM o recargar la lista
           var card = document.getElementById('card-servicio-' + servicioIdAEliminar);
           if (card) {
             card.remove();
@@ -209,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             cargarServiciosProveedor();
           }
         } else if (res.status === 405) {
-          alert('Esta operación aún no está habilitada en el servidor (revisa que la vista del servicio permita DELETE).');
+          alert('Esta operación aún no está habilitada en el servidor.');
         } else if (res.status === 403) {
           alert('No tienes permiso para eliminar este servicio.');
         } else {
@@ -221,7 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Error de conexión al intentar eliminar el servicio.');
       })
       .finally(function() {
-        // Restaurar el modal y el botón a su estado original
         modalEliminarServicio.style.display = 'none';
         servicioIdAEliminar = null;
         btnConfirmarModalServicio.textContent = textoOriginal;
@@ -261,27 +241,30 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Cargar Categorías desde la API (lectura pública, pero igual pasa por
-  // BEC.api para mantener un único punto de acceso a la red)
+  // Cargar Categorías preservando la opción por defecto
   function cargarCategorias() {
     window.BEC.api(window.BEC.cfg.api.categorias, { method: 'GET' })
       .then(function(res) {
         const cats = res.ok ? window.BEC.lista(res.data) : [];
+        let opcionesHTML = '<option value="">-- Selecciona una categoría --</option>';
+        
         if (cats.length > 0) {
-          selectCat.innerHTML = cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+          opcionesHTML += cats.map(c => `<option value="${c.id}">${escaparHtml(c.nombre)}</option>`).join('');
         } else {
-          selectCat.innerHTML = `<option value="1">Peluquería</option><option value="2">Masajes no Médicos</option>`;
+          opcionesHTML += `<option value="1">Peluquería</option><option value="2">Masajes no Médicos</option>`;
         }
+        selectCat.innerHTML = opcionesHTML;
       })
       .catch(function() {
-        selectCat.innerHTML = `<option value="1">Peluquería</option>`;
+        selectCat.innerHTML = `<option value="">-- Selecciona una categoría --</option><option value="1">Peluquería</option>`;
       });
   }
 
   if (btnAbrir) {
     btnAbrir.addEventListener('click', function() {
-      if (modal) modal.style.display = 'flex';
+      if (form) form.reset();
       if (msjBox) msjBox.innerHTML = '';
+      if (modal) modal.style.display = 'flex';
       cargarCategorias();
     });
   }
@@ -318,7 +301,6 @@ document.addEventListener('DOMContentLoaded', function() {
           const duracion = s.duracion_minutos || s.duracion || 60;
           const categoria = (s.categoria && typeof s.categoria === 'object') ? (s.categoria.nombre || 'VARIOS') : (s.categoria_nombre || 'VARIOS');
           
-          // Nueva línea para evaluar el estado (soporta booleanos y strings)
           const esActivo = (s.estado === true || String(s.estado).toLowerCase() === 'activo');
           const textoEstado = esActivo ? 'Activo' : 'Inactivo';
           const bgColor = esActivo ? '#f0fdf4' : '#fef2f2';
@@ -360,7 +342,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // Enviar Formulario al Backend
   if (form) {
     form.addEventListener('submit', function(e) {
       e.preventDefault();
@@ -369,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const categoriaVal = document.getElementById('selectCategoriaServicio').value;
       const precioVal = document.getElementById('inputPrecioServicio').value;
       const duracionVal = document.getElementById('inputDuracionServicio').value;
-      const estadoVal = document.getElementById('selectEstadoServicio').value
+      const estadoVal = document.getElementById('selectEstadoServicio').value;
 
       const descElem = document.getElementById('inputDescServicio');
       const descripcionVal = descElem ? descElem.value.trim() : "";

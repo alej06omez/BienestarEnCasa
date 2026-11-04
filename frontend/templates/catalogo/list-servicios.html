@@ -59,7 +59,7 @@
         box-shadow: 0 0 0 3px rgba(26, 104, 255, 0.15);
     }
 
-    /* Sección de Búsqueda de Proveedores (HU-10) */
+    /* Sección de Búsqueda de Proveedores */
     .providers-section {
         margin-bottom: 32px;
         background: #F8FAFC;
@@ -170,18 +170,21 @@
         border-color: #93C5FD;
     }
 
-    .service-id-circle {
-        width: 2rem;
-        height: 2rem;
+    /* Etiqueta del proveedor en lugar del círculo con ID */
+    .service-provider-badge {
+        display: inline-flex;
+        align-items: center;
         background-color: #eff6ff;
         color: #2563eb;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 9999px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         margin-bottom: 1rem;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .service-name {
@@ -274,7 +277,7 @@
         <input type="text" id="input-buscar" class="search-input" placeholder="Buscar por servicio o nombre de proveedor...">
     </div>
 
-    <!-- Sección Dinámica para Búsqueda de Proveedores (HU-10) -->
+    <!-- Sección Dinámica para Búsqueda de Proveedores -->
     <div class="providers-section" id="seccion-proveedores" hidden>
         <h2 class="section-title">Proveedores</h2>
         <div class="providers-grid" id="grid-proveedores"></div>
@@ -307,20 +310,30 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function escapeHtml(texto) {
-        if (!texto) return '';
-        return String(texto)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
+    if (!texto) return '';
+    var div = document.createElement('div');
+    div.textContent = String(texto);
+    return div.innerHTML;
+}
 
     function formatearDinero(monto) {
         if (window.BEC && window.BEC.dinero) {
             return window.BEC.dinero(monto);
         }
         return '$' + Number(monto || 0).toLocaleString('es-CO');
+    }
+
+    function obtenerNombreProveedor(s) {
+        if (s.nombre_proveedor) return s.nombre_proveedor;
+        if (s.proveedor_nombre) return s.proveedor_nombre;
+        if (s.proveedor && typeof s.proveedor === 'object') {
+            var n = s.proveedor.nombres || s.proveedor.nombre || s.proveedor.first_name || '';
+            var a = s.proveedor.apellidos || s.proveedor.apellido || s.proveedor.last_name || '';
+            var completo = (n + ' ' + a).trim();
+            if (completo) return completo;
+            if (s.proveedor.username) return s.proveedor.username;
+        }
+        return 'Proveedor';
     }
 
     function obtenerNombreCategoria(s) {
@@ -372,14 +385,15 @@ document.addEventListener('DOMContentLoaded', function () {
             var urlSolicitud = '/solicitar/' + s.id + '/';
             var urlDetalleServicio = '/catalogo/' + s.id + '/';
             var catNombre = obtenerNombreCategoria(s);
+            var proveedorNombre = obtenerNombreProveedor(s);
             var duracion = s.duracion_minutos || s.duracion || 60;
 
             var cardHTML = `
                 <div class="service-card">
                     <div>
-                        <div class="service-id-circle">${s.id}</div>
-                        <h3 class="service-name">${s.nombre || 'Servicio sin título'}</h3>
-                        <p class="service-category-subtext">${catNombre}</p>
+                        <div class="service-provider-badge">${escapeHtml(proveedorNombre)}</div>
+                        <h3 class="service-name">${escapeHtml(s.nombre || 'Servicio sin título')}</h3>
+                        <p class="service-category-subtext">${escapeHtml(catNombre)}</p>
                     </div>
                     <div class="service-card-footer">
                         <div>
@@ -397,7 +411,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Búsqueda de proveedores (HU-10)
     function buscarProveedores(query) {
         if (!seccionProveedores || !gridProveedores) return;
 
@@ -428,7 +441,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     var nombreCompleto = escapeHtml((p.nombres || '') + ' ' + (p.apellidos || p.nombre_completo || ''));
                     var desc = escapeHtml(p.descripcion_profesional || 'Sin descripción profesional registrada.');
                     
-                    // URL explícita a la vista de perfil del cliente passing ID
                     var urlPerfilPublico = '/proveedor/' + p.id + '/';
 
                     var provCard = `
@@ -460,7 +472,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (term) {
                 var nombre = (s.nombre || '').toLowerCase();
                 var cat = obtenerNombreCategoria(s).toLowerCase();
-                coincideTexto = nombre.includes(term) || cat.includes(term);
+                var prov = obtenerNombreProveedor(s).toLowerCase();
+                coincideTexto = nombre.includes(term) || cat.includes(term) || prov.includes(term);
             }
 
             var coincideCategoria = true;
