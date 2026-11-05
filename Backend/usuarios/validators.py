@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 
 from .models import DisponibilidadProveedor, PeriodoNoDisponible
 
-
+#validators.py
 def validar_horario_reserva(proveedor, fecha, hora, duracion_minutos):
     """Valida una reserva contra el horario semanal y los bloqueos del proveedor."""
     if not fecha or not hora:
