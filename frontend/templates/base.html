@@ -106,11 +106,11 @@
                             </a>
                         </div>
 
-                        <button type="button" id="btnSubmitLogin" class="btn-login-submit">Iniciar sesión</button>
+                        <button type="submit" id="btnSubmitLogin" class="btn-login-submit">Iniciar sesión</button>
                     </form>
 
                     <p class="login-footer-register">
-                        ¿No tienes cuenta? <a href="users/registro.html" id="linkIrARegistro">Regístrate aquí</a>
+                        ¿No tienes cuenta? <a href="{% url 'pagina-registro' %}" id="linkIrARegistro">Regístrate aquí</a>
                     </p>
                 </div>
             </div>
@@ -170,7 +170,7 @@
                     </form>
 
                     <p class="login-footer-register">
-                        ¿Ya tienes una cuenta? <a href="users/iniciar-sesion.html" id="linkIrALogin">Inicia sesión</a>
+                        ¿Ya tienes una cuenta? <a href="{% url 'pagina-login' %}" id="linkIrALogin">Inicia sesión</a>
                     </p>
                 </div>
             </div>
@@ -378,17 +378,5 @@
     }
 </style>
     {% block extra_body %}{% endblock %}
-    <script>
-        document.addEventListener('click', function(e) {
-            const btnHamburguesa = e.target.closest('#btnMenuMobile');
-            if (btnHamburguesa) {
-                // Buscamos específicamente la lista dentro de main-nav
-                const navList = document.querySelector('.main-nav .nav-list');
-                if (navList) {
-                    navList.classList.toggle('mostrar-menu');
-                }
-            }
-        });
-    </script>
 </body>
 </html>

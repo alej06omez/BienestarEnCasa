@@ -25,9 +25,7 @@ from .permissions import EsProveedorRegistrado
 
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from catalogo.models import Servicio
-from django.db.models import Q
-from django.db.models import Prefetch
-from django.http import Http404
+from django.db.models import Q, Prefetch
 from django.shortcuts import get_object_or_404, render, redirect
 from .serializers import (
     ProveedorPublicoSerializer, ZonaAtencionSerializer, PerfilProveedorSerializer,
@@ -35,7 +33,6 @@ from .serializers import (
     PerfilSerializer, RegistroSerializer, DisponibilidadProveedorSerializer,
     PeriodoNoDisponibleProveedorSerializer
 )
-from catalogo.serializers import ServicioSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class RegistroView(generics.CreateAPIView):
@@ -383,23 +380,6 @@ class ProveedorListaView(generics.ListAPIView):
             
         return queryset
 
-    def retrieve(self, request, *args, **kwargs):
-        try:
-            perfil = self.get_object()
-        except Http404:
-            return Response(
-                {'error': 'El proveedor solicitado no fue encontrado.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        data = self.get_serializer(perfil).data
-        data['email'] = perfil.perfil_usuario.usuario.email
-        data['telefono'] = perfil.perfil_usuario.telefono
-        data['tiene_zonas_registradas'] = bool(data['zonas_atencion'])
-        if not data['zonas_atencion']:
-            data['mensaje_zonas'] = 'El proveedor no tiene zonas generales de atención registradas.'
-        return Response(data)
-
 
 class DisponibilidadProveedorListCreateView(generics.ListCreateAPIView):
     authentication_classes = (CookieJWTAuthentication,)
@@ -487,6 +467,27 @@ class GestionarDisponibilidadPageView(APIView):
         )
         return proveedor
 
+    OPCIONES_HORA = (
+        ('08:00', '08:00 AM'),
+        ('09:00', '09:00 AM'),
+        ('10:00', '10:00 AM'),
+        ('11:00', '11:00 AM'),
+        ('12:00', '12:00 PM'),
+        ('13:00', '01:00 PM'),
+        ('14:00', '02:00 PM'),
+        ('15:00', '03:00 PM'),
+        ('16:00', '04:00 PM'),
+        ('17:00', '05:00 PM'),
+    )
+
+    @staticmethod
+    def _formatear_valor_hora(valor):
+        if not valor:
+            return ''
+        if hasattr(valor, 'strftime'):
+            return valor.strftime('%H:%M')
+        return str(valor).strip()[:5]
+
     def contexto(self, request, disponibilidad_form=None, periodo_form=None, periodo_editando=None):
         horarios = list(self.obtener_horarios(request.user))
         horarios_por_dia = {horario.dia_semana: horario for horario in horarios}
@@ -496,6 +497,7 @@ class GestionarDisponibilidadPageView(APIView):
             'disponibilidad_form': disponibilidad_form,
             'periodo_form': periodo_form or PeriodoNoDisponibleForm(),
             'periodo_editando': periodo_editando,
+            'opciones_hora': self.OPCIONES_HORA,
             'dias': [
                 {
                     'valor': valor,
@@ -504,6 +506,8 @@ class GestionarDisponibilidadPageView(APIView):
                     'activo': str(valor) in dias_seleccionados,
                     'hora_inicio': disponibilidad_form[f'hora_inicio_{valor}'],
                     'hora_fin': disponibilidad_form[f'hora_fin_{valor}'],
+                    'hora_inicio_valor': self._formatear_valor_hora(disponibilidad_form[f'hora_inicio_{valor}'].value()),
+                    'hora_fin_valor': self._formatear_valor_hora(disponibilidad_form[f'hora_fin_{valor}'].value()),
                 }
                 for valor, etiqueta in DisponibilidadProveedor.DIAS_SEMANA
             ],

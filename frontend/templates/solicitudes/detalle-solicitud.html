@@ -8,12 +8,15 @@
         background: #fff;
         padding: 32px;
         border-radius: 16px;
+        max-width: 1040px;
+        margin: 24px auto;
     }
 
     .solicitud-wrap h1 {
-        font-size: 2.2rem;
+        font-size: 2.1rem;
         font-weight: 800;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
+        color: #0f172a;
     }
 
     .solicitud-grid {
@@ -36,10 +39,26 @@
         margin-bottom: 20px;
     }
 
+    .tarjeta-contrapropuesta {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+    }
+
+    .tarjeta-completada {
+        background: #f0fdfa;
+        border: 1px solid #99f6e4;
+    }
+
+    .tarjeta-cancelada {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+
     .tarjeta h2 {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
         font-weight: 700;
         margin: 0 0 14px;
+        color: #0f172a;
     }
 
     .tarjeta .fila {
@@ -50,7 +69,7 @@
     }
 
     .tarjeta p {
-        margin: 0 0 14px;
+        margin: 0 0 12px;
     }
 
     .tarjeta p strong {
@@ -66,8 +85,9 @@
 
     .options-menu {
         display: flex;
-        gap: 14px;
+        gap: 12px;
         margin-top: 10px;
+        flex-wrap: wrap;
     }
 
     .btn {
@@ -76,14 +96,37 @@
         color: #fff;
         font-weight: 700;
         text-decoration: none;
-        padding: 14px 28px;
-        border-radius: 12px;
+        padding: 12px 22px;
+        border-radius: 10px;
         text-align: center;
+        border: none;
+        cursor: pointer;
+        font-size: 0.92rem;
     }
 
     .btn:hover {
         background: #1d4ed8;
         color: #fff;
+    }
+
+    .btn.exito {
+        background: #0d9488;
+        color: #fff;
+    }
+
+    .btn.exito:hover {
+        background: #0f766e;
+    }
+
+    .btn.peligro {
+        background: #fff;
+        color: #dc2626;
+        border: 1px solid #fca5a5;
+    }
+
+    .btn.peligro:hover {
+        background: #fef2f2;
+        color: #b91c1c;
     }
 
     .btn.secundario {
@@ -96,10 +139,12 @@
         background: #f2f3f7;
         color: #2d2d2d;
     }
+
     #d-estado {
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 999px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 999px;
+        display: inline-block;
     }
 
     .estado-pendiente {
@@ -118,8 +163,8 @@
     }
 
     .estado-completada {
-        background: #e2e3e5;
-        color: #41464b;
+        background: #ccfbf1;
+        color: #0f766e;
     }
 
     .estado-cancelada {
@@ -132,19 +177,22 @@
     <h1 id="titulo">Detalle de la Solicitud</h1>
 
     <!-- Mensajes de sistema -->
-    <div id="mensajes" aria-live="polite"></div>
+    <div id="mensajes" aria-live="polite" style="margin-bottom: 16px;"></div>
 
     <div id="detalle" class="solicitud-detalle" hidden>
         <div class="solicitud-grid">
             <!-- Columna izquierda: Servicio -->
             <div class="tarjeta">
                 <h2>Información del Servicio</h2>
-                <p><span id="d-servicio"></span></p>
+                <p style="font-size: 1.15rem; font-weight: 700; color: #0f172a;"><span id="d-servicio"></span></p>
                 <div class="fila">
                     <p><strong>Proveedor:</strong> <span id="d-proveedor"></span></p>
                     <p><strong>Precio acordado:</strong> <span id="d-precio"></span></p>
                 </div>
-                <p><strong>Duración:</strong> <span id="d-duracion"></span></p>
+                <div class="fila">
+                    <p><strong>Duración:</strong> <span id="d-duracion"></span></p>
+                    <p id="p-cliente" hidden><strong>Cliente:</strong> <span id="d-cliente"></span></p>
+                </div>
             </div>
 
             <!-- Columna derecha: Reserva y Lugar de atención -->
@@ -154,8 +202,7 @@
                     <p><strong>Estado:</strong> <span id="d-estado"></span></p>
                     <div class="fila">
                         <p><strong>Fecha:</strong> <span id="d-fecha"></span></p>
-                        <p><strong>Hora incio:</strong> <span id="d-hora"></span></p>
-                        <p><strong>Hora fin:</strong> <span id="d-hora"></span> - <span id="d-hora-fin"></span></p>
+                        <p><strong>Horario:</strong> <span id="d-hora"></span> - <span id="d-hora-fin"></span></p>
                     </div>
                 </div>
 
@@ -170,18 +217,65 @@
             </div>
         </div>
 
-        <!-- Información adicional opcional, a lo ancho -->
+        <!-- Tarjeta Contrapropuesta (HU-15 / HU-16) -->
+        <div id="bloque-contrapropuesta" class="tarjeta tarjeta-contrapropuesta" hidden>
+            <h2 style="color: #9a3412;">Contrapropuesta de horario del proveedor</h2>
+            <div class="fila">
+                <p><strong>Fecha sugerida:</strong> <span id="d-fecha-sugerida"></span></p>
+                <p><strong>Horario sugerido:</strong> <span id="d-hora-sugerida"></span> - <span id="d-hora-sugerida-fin"></span></p>
+            </div>
+            <p id="p-comentario-contrapropuesta" hidden><strong>Comentario del proveedor:</strong> <span id="d-comentario-contrapropuesta"></span></p>
+            <div id="acciones-contrapropuesta-cliente" class="options-menu" hidden>
+                <button type="button" id="btn-aceptar-contrapropuesta" class="btn exito">✓ Aceptar contrapropuesta</button>
+                <button type="button" id="btn-rechazar-contrapropuesta" class="btn peligro">✕ Rechazar contrapropuesta</button>
+            </div>
+        </div>
+
+        <!-- Tarjeta Finalización (HU-18) -->
+        <div id="bloque-completada" class="tarjeta tarjeta-completada" hidden>
+            <h2 style="color: #0f766e;">Servicio completado</h2>
+            <p id="p-completado-en" hidden><strong>Finalizado el:</strong> <span id="d-completado-en"></span></p>
+            <p id="p-obs-finalizacion" hidden><strong>Observaciones de cierre:</strong> <span id="d-obs-finalizacion"></span></p>
+        </div>
+
+        <!-- Tarjeta Cancelación / Rechazo (HU-15 / HU-16 / HU-17) -->
+        <div id="bloque-cancelada" class="tarjeta tarjeta-cancelada" hidden>
+            <h2 style="color: #991b1b;">Información de cancelación / rechazo</h2>
+            <p id="p-cancelado-por" hidden><strong>Cancelado / rechazado por:</strong> <span id="d-cancelado-por"></span></p>
+            <p id="p-cancelado-en" hidden><strong>Fecha de cancelación:</strong> <span id="d-cancelado-en"></span></p>
+            <p id="p-motivo" hidden><strong>Motivo:</strong> <span id="d-motivo"></span></p>
+        </div>
+
+        <!-- Información adicional y acciones de gestión Sprint 3 -->
         <div class="tarjeta">
-            <p id="p-observaciones" hidden><strong>Observaciones:</strong> <span id="d-observaciones"></span></p>
-            <p id="p-motivo" hidden><strong>Motivo de rechazo o cancelación:</strong> <span id="d-motivo"></span></p>
+            <p id="p-observaciones" hidden><strong>Observaciones de la solicitud:</strong> <span id="d-observaciones"></span></p>
             <p class="meta-creacion"><small>Creada el <span id="d-creada"></span> · Última actualización: <span id="d-actualizada"></span></small></p>
+
+            <div id="acciones-gestion-sprint3" class="options-menu" hidden>
+                <button type="button" id="btn-finalizar-detalle" class="btn exito" hidden>✓ Finalizar servicio</button>
+                <button type="button" id="btn-cancelar-detalle" class="btn peligro" hidden>Cancelar solicitud / reserva</button>
+            </div>
         </div>
     </div>
 
     <div class="options-menu">
         <a href="#" id="ver-servicio" class="btn" hidden>Ver el Servicio</a>
-        <a href="{% url 'pagina-mis-solicitudes' %}" class="btn secundario">Volver a Mis Solicitudes</a>
+        <a href="{% url 'pagina-mis-solicitudes' %}" id="btn-volver-listado" class="btn secundario">Volver a Mis Solicitudes</a>
     </div>
+</div>
+
+<!-- Modal Motivo (Rechazar contrapropuesta / Cancelar / Finalizar) -->
+<div id="modalDetalleAccion" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
+    <h3 id="tituloModalDetalle" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Confirmar acción</h3>
+    <p id="descModalDetalle" style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.9rem 0; line-height: 1.4;"></p>
+    <div id="errModalDetalle" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+    <textarea id="inputModalDetalle" rows="3" placeholder="Escribe aquí..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCerrarModalDetalle" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">Volver</button>
+      <button type="button" id="btnConfirmarModalDetalle" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">Confirmar</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -189,96 +283,326 @@
 <script>
 (function () {
     var ID = "{{ pk }}";
+    var perfilActual = null;
+    var solicitudActual = null;
+    var modoModal = null; // 'cancelar' | 'rechazar-contrapropuesta' | 'finalizar'
 
-    // Helpers de seguridad por si BEC no trae alguna función de formato
-    if (window.BEC) {
-        if (!window.BEC.fecha) {
-            window.BEC.fecha = function(raw) {
-                if (!raw) return '';
-                var d = new Date(raw + (raw.indexOf('T') === -1 ? 'T00:00:00' : ''));
-                return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
-            };
-        }
-        if (!window.BEC.hora) {
-            window.BEC.hora = function(raw) {
-                if (!raw) return '';
-                return raw.length > 5 ? raw.substring(0, 5) : raw;
-            };
-        }
-        if (!window.BEC.fechaHora) {
-            window.BEC.fechaHora = function(raw) {
-                if (!raw) return '';
-                var d = new Date(raw);
-                return isNaN(d.getTime()) ? raw : d.toLocaleString('es-CO');
-            };
-        }
+    function escaparHtml(valor) {
+        if (valor === null || valor === undefined) return '';
+        var div = document.createElement('div');
+        div.textContent = String(valor);
+        return div.innerHTML;
     }
 
-    function texto(id, valor) { document.getElementById(id).textContent = valor; }
+    function extraerErrorApi(data, respaldo) {
+        if (!data) return respaldo;
+        if (typeof data === 'string') return data;
+        if (data.detail) return String(data.detail);
+        var partes = [];
+        Object.keys(data).forEach(function (k) {
+            var v = data[k];
+            if (Array.isArray(v)) partes.push(v.join(' '));
+            else if (typeof v === 'string') partes.push(v);
+        });
+        return partes.length ? partes.join(' ') : respaldo;
+    }
+
+    function mostrarMensaje(texto, tipo) {
+        var box = document.getElementById('mensajes');
+        if (!box) return;
+        var esError = tipo === 'error';
+        box.innerHTML = '<div style="background-color:' + (esError ? '#fef2f2' : '#f0fdf4') + '; color:' + (esError ? '#991b1b' : '#166534') + '; border:1px solid ' + (esError ? '#fecaca' : '#bbf7d0') + '; padding: 12px 16px; border-radius: 10px; font-weight: 600;">' + escaparHtml(texto) + '</div>';
+    }
+
+    function mostrarErrorModal(texto) {
+        var box = document.getElementById('errModalDetalle');
+        if (!box) return;
+        box.innerHTML = texto
+            ? '<div style="background-color:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding: 0.6rem 0.8rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 600;">' + escaparHtml(texto) + '</div>'
+            : '';
+    }
+
+    function formatearFecha(raw) {
+        if (!raw) return '';
+        var d = new Date(raw + (String(raw).indexOf('T') === -1 ? 'T00:00:00' : ''));
+        return isNaN(d.getTime()) ? raw : d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function formatearHora(raw) {
+        if (!raw) return '';
+        return String(raw).length > 5 ? String(raw).substring(0, 5) : String(raw);
+    }
+
+    function formatearFechaHora(raw) {
+        if (!raw) return '';
+        var d = new Date(raw);
+        return isNaN(d.getTime()) ? raw : d.toLocaleString('es-CO');
+    }
+
+    function texto(id, valor) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = valor;
+    }
+
     function opcional(idP, idSpan, valor) {
-        if (valor) { texto(idSpan, valor); document.getElementById(idP).hidden = false; }
+        var p = document.getElementById(idP);
+        if (!p) return;
+        if (valor) {
+            texto(idSpan, valor);
+            p.hidden = false;
+        } else {
+            p.hidden = true;
+        }
     }
 
-        function sumarMinutos(horaStr, minutos) {
+    function sumarMinutos(horaStr, minutos) {
         if (!horaStr || !minutos) return '';
-        var partes = horaStr.split(':');
+        var partes = String(horaStr).split(':');
         var h = parseInt(partes[0], 10);
         var m = parseInt(partes[1], 10);
-
-        var totalMin = h * 60 + m + parseInt(minutos, 10);
-        totalMin = totalMin % (24 * 60); // por si pasa de medianoche
-
+        if (isNaN(h) || isNaN(m)) return '';
+        var totalMin = (h * 60 + m + parseInt(minutos, 10)) % (24 * 60);
         var hFin = Math.floor(totalMin / 60);
         var mFin = totalMin % 60;
-
         return String(hFin).padStart(2, '0') + ':' + String(mFin).padStart(2, '0');
     }
 
-    BEC.requiereSesion(['CLIENTE']).then(function (p) {
-        if (!p) { return; }
-        BEC.api(BEC.url(BEC.cfg.api.solicitud, ID)).then(function (res) {
-            if (res.status === 404) { BEC.mensaje('La solicitud no existe o no te pertenece.', 'error'); return; }
-            if (!res.ok) { BEC.mensajeError(res); return; }
-            var s = res.data;
+    function renderizarDetalle(s) {
+        solicitudActual = s;
+        var rol = String((perfilActual && perfilActual.rol) || '').toUpperCase();
+        var esCliente = rol === 'CLIENTE';
+        var esProveedor = rol === 'PROVEEDOR' || rol === 'PRO';
+        var estado = String(s.estado || '').toUpperCase();
 
-            document.getElementById('titulo').textContent = 'Solicitud #' + s.id;
-            // Estos valores son una copia fija de las condiciones del servicio al momento de solicitarlo
-            texto('d-servicio', s.nombre_servicio_copia);
-            texto('d-proveedor', s.nombre_proveedor);
-            texto('d-precio', BEC.dinero(s.precio_copia));
-            texto('d-duracion', s.duracion_minutos_copia + ' minutos');
-            
-            texto('d-estado', BEC.ESTADOS_SOLICITUD[s.estado] || s.estado);
+        document.getElementById('titulo').textContent = 'Solicitud #' + s.id;
+        texto('d-servicio', s.nombre_servicio_copia);
+        texto('d-proveedor', s.nombre_proveedor);
+        texto('d-precio', BEC.dinero(s.precio_copia));
+        texto('d-duracion', s.duracion_minutos_copia + ' minutos');
+        opcional('p-cliente', 'd-cliente', s.cliente_nombre ? (s.cliente_nombre + (s.cliente_telefono ? ' (' + s.cliente_telefono + ')' : '')) : '');
 
-            var claseEstado = {
-                'PENDIENTE': 'estado-pendiente',
-                'SUGERIDA': 'estado-sugerida',
-                'ACEPTADA': 'estado-aceptada',
-                'COMPLETADA': 'estado-completada',
-                'CANCELADA': 'estado-cancelada'
-            }[s.estado] || '';
+        texto('d-estado', BEC.ESTADOS_SOLICITUD[estado] || estado);
+        var claseEstado = {
+            'PENDIENTE': 'estado-pendiente',
+            'SUGERIDA': 'estado-sugerida',
+            'ACEPTADA': 'estado-aceptada',
+            'COMPLETADA': 'estado-completada',
+            'CANCELADA': 'estado-cancelada'
+        }[estado] || '';
+        document.getElementById('d-estado').className = claseEstado;
 
-            document.getElementById('d-estado').className = claseEstado;
+        texto('d-fecha', formatearFecha(s.fecha_solicitada));
+        texto('d-hora', formatearHora(s.hora_solicitada));
+        texto('d-hora-fin', sumarMinutos(s.hora_solicitada, s.duracion_minutos_copia));
+        texto('d-direccion', s.direccion_atencion);
+        texto('d-barrio', s.barrio_sector);
+        opcional('p-complementaria', 'd-complementaria', s.informacion_complementaria);
+        opcional('p-observaciones', 'd-observaciones', s.observaciones);
+        texto('d-creada', formatearFechaHora(s.creado_en));
+        texto('d-actualizada', formatearFechaHora(s.actualizado_en));
 
-            texto('d-fecha', BEC.fecha(s.fecha_solicitada));
-            texto('d-hora', BEC.hora(s.hora_solicitada));
-            texto('d-hora-fin', sumarMinutos(s.hora_solicitada, s.duracion_minutos_copia));
-            texto('d-direccion', s.direccion_atencion);
-            texto('d-barrio', s.barrio_sector);
-            opcional('p-complementaria', 'd-complementaria', s.informacion_complementaria);
-            opcional('p-observaciones', 'd-observaciones', s.observaciones);
+        // Bloque contrapropuesta (HU-15 / HU-16)
+        var bloqueContra = document.getElementById('bloque-contrapropuesta');
+        var accionesContra = document.getElementById('acciones-contrapropuesta-cliente');
+        if (s.hora_sugerida && (estado === 'SUGERIDA' || s.comentario_contrapropuesta)) {
+            texto('d-fecha-sugerida', formatearFecha(s.fecha_sugerida || s.fecha_solicitada));
+            texto('d-hora-sugerida', formatearHora(s.hora_sugerida));
+            texto('d-hora-sugerida-fin', sumarMinutos(s.hora_sugerida, s.duracion_minutos_copia));
+            opcional('p-comentario-contrapropuesta', 'd-comentario-contrapropuesta', s.comentario_contrapropuesta);
+            bloqueContra.hidden = false;
+            accionesContra.hidden = !(esCliente && estado === 'SUGERIDA');
+        } else {
+            bloqueContra.hidden = true;
+            accionesContra.hidden = true;
+        }
+
+        // Bloque completada (HU-18)
+        var bloqueComp = document.getElementById('bloque-completada');
+        if (estado === 'COMPLETADA') {
+            opcional('p-completado-en', 'd-completado-en', s.completado_en ? formatearFechaHora(s.completado_en) : '');
+            opcional('p-obs-finalizacion', 'd-obs-finalizacion', s.observaciones_finalizacion || 'Sin observaciones adicionales.');
+            bloqueComp.hidden = false;
+        } else {
+            bloqueComp.hidden = true;
+        }
+
+        // Bloque cancelada (HU-15 / HU-16 / HU-17)
+        var bloqueCanc = document.getElementById('bloque-cancelada');
+        if (estado === 'CANCELADA') {
+            var etiquetaQuien = s.cancelado_por === 'PROVEEDOR' ? 'Proveedor' : (s.cancelado_por === 'CLIENTE' ? 'Cliente' : '');
+            opcional('p-cancelado-por', 'd-cancelado-por', etiquetaQuien);
+            opcional('p-cancelado-en', 'd-cancelado-en', s.cancelado_en ? formatearFechaHora(s.cancelado_en) : '');
             opcional('p-motivo', 'd-motivo', s.motivo_rechazo_cancelacion);
-            texto('d-creada', BEC.fechaHora(s.creado_en));
-            texto('d-actualizada', BEC.fechaHora(s.actualizado_en));
+            bloqueCanc.hidden = false;
+        } else {
+            bloqueCanc.hidden = true;
+        }
 
-            // El servicio puede haber sido eliminado (la solicitud conserva su copia)
-            if (s.servicio) {
-                var a = document.getElementById('ver-servicio');
-                a.href = BEC.url(BEC.cfg.pages.servicio, s.servicio);
-                a.hidden = false;
+        // Acciones Sprint 3 en tarjeta inferior
+        var bloqueAcciones = document.getElementById('acciones-gestion-sprint3');
+        var btnFinalizar = document.getElementById('btn-finalizar-detalle');
+        var btnCancelar = document.getElementById('btn-cancelar-detalle');
+        var puedeFinalizar = esProveedor && estado === 'ACEPTADA';
+        var puedeCancelar = (estado === 'PENDIENTE' || estado === 'SUGERIDA' || estado === 'ACEPTADA');
+
+        btnFinalizar.hidden = !puedeFinalizar;
+        btnCancelar.hidden = !puedeCancelar;
+        bloqueAcciones.hidden = !(puedeFinalizar || puedeCancelar);
+
+        if (s.servicio) {
+            var a = document.getElementById('ver-servicio');
+            a.href = BEC.url(BEC.cfg.pages.servicio, s.servicio);
+            a.hidden = false;
+        }
+
+        var btnVolver = document.getElementById('btn-volver-listado');
+        if (esProveedor && btnVolver) {
+            btnVolver.href = "{% url 'pagina-panel-proveedor' %}";
+            btnVolver.textContent = 'Volver al Panel de Proveedor';
+        }
+
+        document.getElementById('detalle').hidden = false;
+    }
+
+    function cargarSolicitud() {
+        BEC.api(BEC.url(BEC.cfg.api.solicitud, ID)).then(function (res) {
+            if (res.status === 404) {
+                mostrarMensaje('La solicitud no existe o no te pertenece.', 'error');
+                return;
             }
-            document.getElementById('detalle').hidden = false;
+            if (!res.ok) {
+                mostrarMensaje(extraerErrorApi(res.data, 'No se pudo cargar la solicitud.'), 'error');
+                return;
+            }
+            renderizarDetalle(res.data);
         });
+    }
+
+    var modal = document.getElementById('modalDetalleAccion');
+    var tituloModal = document.getElementById('tituloModalDetalle');
+    var descModal = document.getElementById('descModalDetalle');
+    var inputModal = document.getElementById('inputModalDetalle');
+    var btnCerrarModal = document.getElementById('btnCerrarModalDetalle');
+    var btnConfirmarModal = document.getElementById('btnConfirmarModalDetalle');
+
+    function abrirModal(modo) {
+        modoModal = modo;
+        mostrarErrorModal('');
+        inputModal.value = '';
+        if (modo === 'cancelar') {
+            tituloModal.textContent = 'Cancelar solicitud o reserva';
+            descModal.textContent = 'Indica el motivo de la cancelación (obligatorio). El horario quedará liberado:';
+            inputModal.placeholder = 'Escribe el motivo de cancelación...';
+            btnConfirmarModal.textContent = 'Confirmar cancelación';
+            btnConfirmarModal.style.backgroundColor = '#ef4444';
+        } else if (modo === 'rechazar-contrapropuesta') {
+            tituloModal.textContent = 'Rechazar contrapropuesta';
+            descModal.textContent = 'Si rechazas la contrapropuesta, la solicitud pasará a estado Cancelada. Motivo (opcional):';
+            inputModal.placeholder = 'Motivo opcional...';
+            btnConfirmarModal.textContent = 'Rechazar contrapropuesta';
+            btnConfirmarModal.style.backgroundColor = '#ef4444';
+        } else if (modo === 'finalizar') {
+            tituloModal.textContent = 'Finalizar servicio';
+            descModal.textContent = 'Confirma que el servicio fue prestado. Observaciones de cierre (opcional):';
+            inputModal.placeholder = 'Ej: Servicio prestado satisfactoriamente.';
+            btnConfirmarModal.textContent = 'Marcar completada';
+            btnConfirmarModal.style.backgroundColor = '#0d9488';
+        }
+        modal.style.display = 'flex';
+    }
+
+    function cerrarModal() {
+        modal.style.display = 'none';
+        modoModal = null;
+        mostrarErrorModal('');
+    }
+
+    btnCerrarModal.addEventListener('click', cerrarModal);
+
+    document.getElementById('btn-aceptar-contrapropuesta').addEventListener('click', function () {
+        if (!solicitudActual) return;
+        BEC.api(BEC.url(BEC.cfg.api.solicitudAceptarContrapropuesta, solicitudActual.id), {
+            method: 'POST',
+            body: {}
+        }).then(function (res) {
+            if (!res.ok) {
+                mostrarMensaje(extraerErrorApi(res.data, 'No se pudo aceptar la contrapropuesta.'), 'error');
+                return;
+            }
+            mostrarMensaje('¡Contrapropuesta aceptada! Tu reserva fue confirmada con el nuevo horario.', 'ok');
+            renderizarDetalle(res.data);
+        });
+    });
+
+    document.getElementById('btn-rechazar-contrapropuesta').addEventListener('click', function () {
+        abrirModal('rechazar-contrapropuesta');
+    });
+
+    document.getElementById('btn-cancelar-detalle').addEventListener('click', function () {
+        abrirModal('cancelar');
+    });
+
+    document.getElementById('btn-finalizar-detalle').addEventListener('click', function () {
+        abrirModal('finalizar');
+    });
+
+    btnConfirmarModal.addEventListener('click', function () {
+        if (!solicitudActual || !modoModal) return;
+        var textoIngresado = inputModal.value.trim();
+
+        if (modoModal === 'cancelar' && !textoIngresado) {
+            mostrarErrorModal('Debes indicar el motivo de la cancelación.');
+            return;
+        }
+
+        var urlApi = '';
+        var payload = {};
+        if (modoModal === 'cancelar') {
+            urlApi = BEC.url(BEC.cfg.api.solicitudCancelar, solicitudActual.id);
+            payload = { motivo: textoIngresado };
+        } else if (modoModal === 'rechazar-contrapropuesta') {
+            urlApi = BEC.url(BEC.cfg.api.solicitudRechazarContrapropuesta, solicitudActual.id);
+            payload = { motivo: textoIngresado };
+        } else if (modoModal === 'finalizar') {
+            urlApi = BEC.url(BEC.cfg.api.solicitudFinalizar, solicitudActual.id);
+            payload = { observaciones_finalizacion: textoIngresado };
+        }
+
+        var txtOriginal = btnConfirmarModal.textContent;
+        btnConfirmarModal.textContent = 'Procesando...';
+        btnConfirmarModal.disabled = true;
+        mostrarErrorModal('');
+
+        BEC.api(urlApi, { method: 'POST', body: payload }).then(function (res) {
+            if (!res.ok) {
+                mostrarErrorModal(extraerErrorApi(res.data, 'No se pudo completar la operación.'));
+                return;
+            }
+            var accionEjecutada = modoModal;
+            cerrarModal();
+            if (accionEjecutada === 'cancelar') {
+                mostrarMensaje('Solicitud/reserva cancelada correctamente.', 'ok');
+            } else if (accionEjecutada === 'rechazar-contrapropuesta') {
+                mostrarMensaje('Contrapropuesta rechazada. La solicitud fue cancelada.', 'ok');
+            } else if (accionEjecutada === 'finalizar') {
+                mostrarMensaje('¡Servicio marcado como completado exitosamente!', 'ok');
+            }
+            renderizarDetalle(res.data);
+        }).catch(function () {
+            mostrarErrorModal('Error de conexión con el servidor.');
+        }).finally(function () {
+            btnConfirmarModal.textContent = txtOriginal;
+            btnConfirmarModal.disabled = false;
+        });
+    });
+
+    BEC.requiereSesion(['CLIENTE', 'PROVEEDOR']).then(function (p) {
+        if (!p) {
+            mostrarMensaje('Debes iniciar sesión para consultar el detalle de esta solicitud.', 'error');
+            return;
+        }
+        perfilActual = p;
+        cargarSolicitud();
     });
 })();
 </script>

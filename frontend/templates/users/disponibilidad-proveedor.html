@@ -95,33 +95,21 @@
                                         <label for="hora_inicio_{{ dia.valor }}">Desde</label>
                                         <select id="hora_inicio_{{ dia.valor }}" name="hora_inicio_{{ dia.valor }}">
                                             <option value="">Seleccione la hora de inicio</option>
-                                            <option value="08:00">08:00 AM</option>
-                                            <option value="09:00">09:00 AM</option>
-                                            <option value="10:00">10:00 AM</option>
-                                            <option value="11:00">11:00 AM</option>
-                                            <option value="12:00">12:00 PM</option>
-                                            <option value="13:00">01:00 PM</option>
-                                            <option value="14:00">02:00 PM</option>
-                                            <option value="15:00">03:00 PM</option>
-                                            <option value="16:00">04:00 PM</option>
-                                            <option value="17:00">05:00 PM</option>
+                                            {% for opt_val, opt_label in opciones_hora %}
+                                                <option value="{{ opt_val }}" {% if dia.hora_inicio_valor == opt_val %}selected{% endif %}>{{ opt_label }}</option>
+                                            {% endfor %}
                                         </select>
+                                        {% if dia.hora_inicio.errors %}<div class="availability-errors">{{ dia.hora_inicio.errors|striptags }}</div>{% endif %}
                                     </div>
                                     <div>
                                         <label for="hora_fin_{{ dia.valor }}">Hasta</label>
                                         <select id="hora_fin_{{ dia.valor }}" name="hora_fin_{{ dia.valor }}">
                                             <option value="">Seleccione la hora fin</option>
-                                            <option value="08:00">08:00 AM</option>
-                                            <option value="09:00">09:00 AM</option>
-                                            <option value="10:00">10:00 AM</option>
-                                            <option value="11:00">11:00 AM</option>
-                                            <option value="12:00">12:00 PM</option>
-                                            <option value="13:00">01:00 PM</option>
-                                            <option value="14:00">02:00 PM</option>
-                                            <option value="15:00">03:00 PM</option>
-                                            <option value="16:00">04:00 PM</option>
-                                            <option value="17:00">05:00 PM</option>
+                                            {% for opt_val, opt_label in opciones_hora %}
+                                                <option value="{{ opt_val }}" {% if dia.hora_fin_valor == opt_val %}selected{% endif %}>{{ opt_label }}</option>
+                                            {% endfor %}
                                         </select>
+                                        {% if dia.hora_fin.errors %}<div class="availability-errors">{{ dia.hora_fin.errors|striptags }}</div>{% endif %}
                                     </div>
                                 </div>
                             </article>

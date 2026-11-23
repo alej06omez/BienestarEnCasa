@@ -29,7 +29,7 @@ def _intervalo(fecha, hora, duracion_minutos):
     return inicio, inicio + timedelta(minutes=max(duracion_minutos or 0, 1))
 
 
-def validar_limites_cliente(cliente, fecha, hora, duracion_minutos):
+def validar_limites_cliente(cliente, fecha, hora, duracion_minutos, excluir_solicitud_id=None):
     """Lanza ValidationError si el cliente se cruza con otra solicitud activa
     o ya alcanzó el máximo de solicitudes activas para esa fecha."""
     if not cliente or not fecha or not hora:
@@ -40,6 +40,8 @@ def validar_limites_cliente(cliente, fecha, hora, duracion_minutos):
         fecha_solicitada=fecha,
         estado__in=ESTADOS_ACTIVOS,
     )
+    if excluir_solicitud_id is not None:
+        activas = activas.exclude(pk=excluir_solicitud_id)
 
     # Regla 1: sin solicitudes que se crucen en el tiempo
     inicio, fin = _intervalo(fecha, hora, duracion_minutos)
@@ -57,3 +59,28 @@ def validar_limites_cliente(cliente, fecha, hora, duracion_minutos):
         raise ValidationError({
             'fecha_solicitada': 'Solo puedes hacer hasta 3 solicitudes por día.'
         })
+
+
+def validar_conflicto_proveedor(proveedor, fecha, hora, duracion_minutos, excluir_solicitud_id=None):
+    """Lanza ValidationError si el proveedor ya tiene una reserva ACEPTADA
+    que se cruza en fecha y horario."""
+    if not proveedor or not fecha or not hora:
+        return
+
+    aceptadas = SolicitudReserva.objects.filter(
+        proveedor=proveedor,
+        fecha_solicitada=fecha,
+        estado=SolicitudReserva.Estado.ACEPTADA,
+    )
+    if excluir_solicitud_id is not None:
+        aceptadas = aceptadas.exclude(pk=excluir_solicitud_id)
+
+    inicio, fin = _intervalo(fecha, hora, duracion_minutos)
+    for hora_existente, duracion_existente in aceptadas.values_list(
+        'hora_solicitada', 'duracion_minutos_copia'
+    ):
+        existente_inicio, existente_fin = _intervalo(fecha, hora_existente, duracion_existente)
+        if inicio < existente_fin and fin > existente_inicio:
+            raise ValidationError({
+                'hora_solicitada': 'El proveedor ya tiene una reserva confirmada que se cruza con ese horario.'
+            })

@@ -23,6 +23,7 @@
         <p id="ayuda-perfil"></p>
 
         <form id="form-proveedor" novalidate hidden>
+            {% csrf_token %}
             <div class="form-group">
                 <label for="descripcion_profesional">Descripción profesional:</label>
                 <textarea name="descripcion_profesional" id="descripcion_profesional" rows="8"

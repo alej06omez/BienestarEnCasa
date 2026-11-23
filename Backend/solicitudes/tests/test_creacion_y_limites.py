@@ -9,9 +9,9 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from catalogo.models import Categoria, Servicio
+from solicitudes import limites
+from solicitudes.models import SolicitudReserva
 from usuarios.models import DisponibilidadProveedor, PerfilProveedor, PerfilUsuario
-from . import limites
-from .models import SolicitudReserva
 
 User = get_user_model()
 Estado = SolicitudReserva.Estado
@@ -325,3 +325,5 @@ class LimitesSolicitudesClienteTests(APITestCase):
 
         self.assertRechazo(respuesta, 'fecha_solicitada', MSG_LIMITE)
         self.assertEqual(self.total_del_cliente(), 3)
+
+

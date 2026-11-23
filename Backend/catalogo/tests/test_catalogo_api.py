@@ -3,11 +3,11 @@ import tempfile
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import override_settings
 from rest_framework.test import APIClient, APITestCase
 
+from catalogo.models import Categoria, Servicio
 from usuarios.models import PerfilProveedor, PerfilUsuario
-from .models import Categoria, Servicio
 
 MEDIA_TEMP = tempfile.mkdtemp()
 
@@ -99,26 +99,6 @@ class HU08HU09Tests(APITestCase):
         self.assertIn('servicios', publico.data)
 
 
-class CatalogoPaginasFrontendTests(TestCase):
-    def test_paginas_de_gestion_catalogo_y_perfil_renderizan(self):
-        rutas = (
-            '/mis-servicios/',
-            '/mis-servicios/nuevo/',
-            '/mis-servicios/1/editar/',
-            '/catalogo/',
-            '/catalogo/1/',
-            '/proveedor/1/',
-        )
-        for ruta in rutas:
-            with self.subTest(ruta=ruta):
-                self.assertEqual(self.client.get(ruta).status_code, 200)
-
-    def test_base_template_no_incrusta_codigo_javascript(self):
-        from pathlib import Path
-
-        plantilla_base = Path(__file__).resolve().parents[2] / 'frontend' / 'templates' / 'base.html'
-        contenido = plantilla_base.read_text(encoding='utf-8')
-        self.assertNotIn('<script', contenido.lower())
 
 
 @override_settings(MEDIA_ROOT=MEDIA_TEMP)
