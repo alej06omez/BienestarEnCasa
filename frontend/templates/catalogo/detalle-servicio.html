@@ -178,16 +178,30 @@
         document.title = (s.nombre || 'Servicio') + ' - BienestarEnCasa';
         
         // Asignación de datos a la tarjeta de información
-        document.getElementById('titulo-servicio').textContent = s.nombre || '{Nombre del Servicio}';
-        document.getElementById('d-proveedor').textContent = s.nombre_proveedor || '{Nombre del proveedor}';
-        document.getElementById('d-duracion').textContent = s.duracion_minutos ? s.duracion_minutos + ' minutos' : '{Duración del servicio}';
-        document.getElementById('d-precio').textContent = s.precio ? BEC.dinero(s.precio) : '{Precio del servicio}';
-        document.getElementById('d-categoria').textContent = s.categoria_detalle ? s.categoria_detalle.nombre : '{Nombre de la categoría}';
+        document.getElementById('titulo-servicio').textContent = s.nombre || 'Servicio';
+        var elProveedor = document.getElementById('d-proveedor');
+        if (elProveedor) {
+            elProveedor.replaceChildren();
+            var nombreProv = s.nombre_proveedor || 'Proveedor';
+            if (s.proveedor) {
+                elProveedor.appendChild(h('a', {
+                    href: '/proveedor/' + s.proveedor + '/',
+                    text: nombreProv,
+                    style: 'color: #2563eb; text-decoration: none;'
+                }));
+            } else {
+                elProveedor.textContent = nombreProv;
+            }
+        }
+        document.getElementById('d-duracion').textContent = s.duracion_minutos ? s.duracion_minutos + ' minutos' : 'No especificada';
+        document.getElementById('d-precio').textContent = s.precio ? BEC.dinero(s.precio) : '$0';
+        document.getElementById('d-categoria').textContent = s.categoria_detalle ? s.categoria_detalle.nombre : 'Sin categoría';
 
         var desc = document.getElementById('d-descripcion');
         if (desc) {
             desc.innerHTML = '';
-            var lineasDesc = String(s.descripcion || '{Descripción del servicio}').split(/\n+/);
+            var textoDesc = (s.descripcion && String(s.descripcion).trim()) ? String(s.descripcion) : 'Sin descripción registrada.';
+            var lineasDesc = textoDesc.split(/\n+/);
             lineasDesc.forEach(function (l) { 
                 if (l.trim()) { desc.appendChild(h('p', { text: l })); } 
             });
@@ -238,7 +252,8 @@
         var agendar = document.getElementById('btn-agendar');
         var btnVolver = document.getElementById('btn-volver');
 
-        if (perfil.rol === 'CLIENTE' && s.estado === 'ACTIVO') {
+        var estadoServicio = String(s.estado || '').toUpperCase();
+        if (perfil.rol === 'CLIENTE' && estadoServicio === 'ACTIVO') {
             agendar.href = BEC.url(BEC.cfg.pages.solicitudCrear, s.id);
             agendar.style.display = 'inline-flex';
             btnVolver.textContent = 'Volver al Catálogo';

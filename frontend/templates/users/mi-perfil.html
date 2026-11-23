@@ -28,6 +28,7 @@
       <div id="msjPerfil"></div>
 
       <form id="formPerfil">
+        {% csrf_token %}
         <!-- AVATAR Y DATOS DE CABECERA -->
         <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 2rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.5rem; flex-wrap: wrap;">
           
@@ -142,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const ENDPOINT_PROVEEDOR = '/api/proveedores/mi-perfil/';
 
   let rolActual = 'CLIENTE';
+  let tienePerfilProveedor = false;
   
   // Guardará el estado exacto recibido de la BD/API para restaurar al cancelar
   let estadoGuardadoUltimo = {
@@ -319,48 +321,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch(e) {}
 
-  // Carga desde API
+  // Carga desde API (secuencial para conocer el rol real antes de pedir dirección o biografía)
   function cargarPerfilAPI() {
     if (!window.BEC || !window.BEC.api) return;
 
     window.BEC.api(ENDPOINT_USUARIO).then(function(res) {
       if (res && res.ok && res.data) {
-        pintarDatos(res.data.usuario || res.data);
+        const perfilReal = res.data.usuario || res.data;
+        pintarDatos(perfilReal);
+        try { localStorage.setItem('bec_perfil', JSON.stringify(res.data)); } catch (e) {}
+      }
+
+      // Cargar Dirección Principal solo si es Cliente
+      if (rolActual !== 'PROVEEDOR' && rolActual !== 'PRO') {
+        window.BEC.api(ENDPOINT_DIRECCIONES).then(function(resDir) {
+          const inputDir = document.getElementById('inputDireccionPrincipal');
+          if (!inputDir) return;
+
+          if (resDir && resDir.ok) {
+            const lista = window.BEC.lista(resDir.data);
+            const principal = lista.find(d => d.es_principal) || lista[0];
+
+            if (principal) {
+              const ciudadStr = principal.ciudad ? `, ${principal.ciudad}` : '';
+              const barrioStr = principal.barrio ? `, ${principal.barrio.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}` : '';
+              inputDir.value = (principal.direccion_texto || principal.direccion || 'Sin dirección') + barrioStr + ciudadStr;
+            } else {
+              inputDir.value = 'No has registrado direcciones aún.';
+            }
+          } else {
+            inputDir.value = 'No hay direcciones registradas.';
+          }
+        });
+      }
+
+      if (rolActual === 'PROVEEDOR' || rolActual === 'PRO') {
+        window.BEC.api(ENDPOINT_PROVEEDOR).then(function(resProv) {
+          if (resProv && resProv.ok && resProv.data) {
+            tienePerfilProveedor = true;
+            const bio = resProv.data.descripcion_profesional || resProv.data.biografia || '';
+            document.getElementById('inputBiografia').value = bio;
+            estadoGuardadoUltimo.biografia = bio;
+          } else if (resProv && resProv.status === 404) {
+            tienePerfilProveedor = false;
+            document.getElementById('inputBiografia').value = '';
+            estadoGuardadoUltimo.biografia = '';
+          }
+        });
       }
     });
-
-    // Cargar Dirección Principal solo si es Cliente
-    if (rolActual !== 'PROVEEDOR' && rolActual !== 'PRO') {
-      window.BEC.api(ENDPOINT_DIRECCIONES).then(function(res) {
-        const inputDir = document.getElementById('inputDireccionPrincipal');
-        if (!inputDir) return;
-
-        if (res && res.ok) {
-          const lista = window.BEC.lista(res.data);
-          const principal = lista.find(d => d.es_principal) || lista[0];
-
-          if (principal) {
-            const ciudadStr = principal.ciudad ? `, ${principal.ciudad}` : '';
-            const aliasStr = principal.alias ? ` (${principal.alias})` : '';
-            inputDir.value = (principal.direccion_texto || principal.direccion || 'Sin dirección') + ciudadStr + aliasStr;
-          } else {
-            inputDir.value = 'No has registrado direcciones aún.';
-          }
-        } else {
-          inputDir.value = 'No hay direcciones registradas.';
-        }
-      });
-    }
-
-    if (rolActual === 'PROVEEDOR' || rolActual === 'PRO') {
-      window.BEC.api(ENDPOINT_PROVEEDOR).then(function(res) {
-        if (res && res.ok && res.data) {
-          const bio = res.data.descripcion_profesional || res.data.biografia || '';
-          document.getElementById('inputBiografia').value = bio;
-          estadoGuardadoUltimo.biografia = bio;
-        }
-      });
-    }
   }
 
   // Guardar formulario
@@ -392,42 +401,55 @@ document.addEventListener('DOMContentLoaded', function() {
       window.BEC.api(ENDPOINT_USUARIO, {
         method: 'PATCH',
         body: payload
-      }).then(function(res) {
-        btn.disabled = false;
-        btn.textContent = 'Guardar cambios';
-
+      }).then(async function(res) {
         if (res && res.ok) {
-          if (msjBox) {
-            msjBox.innerHTML = '<div style="background-color: #f0fdf4; color: #166534; padding: 0.7rem 1rem; border-radius: 0.65rem; border: 1px solid #bbf7d0; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem;">¡Perfil actualizado con éxito!</div>';
+          let errorBio = null;
+          if (rolActual === 'PROVEEDOR' || rolActual === 'PRO') {
+            const bio = document.getElementById('inputBiografia').value.trim();
+            if (tienePerfilProveedor || bio) {
+              const resBio = await window.BEC.api(ENDPOINT_PROVEEDOR, {
+                method: tienePerfilProveedor ? 'PATCH' : 'POST',
+                body: { descripcion_profesional: bio || 'Proveedor de servicios de bienestar a domicilio.' }
+              });
+              if (resBio && resBio.ok) {
+                tienePerfilProveedor = true;
+                estadoGuardadoUltimo.biografia = (resBio.data && resBio.data.descripcion_profesional) || bio;
+              } else if (resBio) {
+                errorBio = window.BEC.extraerError(resBio.data, 'No se pudo guardar la biografía profesional.');
+              }
+            }
           }
-          
+
+          btn.disabled = false;
+          btn.textContent = 'Guardar cambios';
+
           try {
             const perfilLocal = JSON.parse(localStorage.getItem('bec_perfil') || '{}');
             Object.assign(perfilLocal, payload);
             localStorage.setItem('bec_perfil', JSON.stringify(perfilLocal));
           } catch(e) {}
 
-          if (rolActual === 'PROVEEDOR' || rolActual === 'PRO') {
-            const bio = document.getElementById('inputBiografia').value.trim();
-            estadoGuardadoUltimo.biografia = bio;
-            window.BEC.api(ENDPOINT_PROVEEDOR, {
-              method: 'PATCH',
-              body: { descripcion_profesional: bio, biografia: bio }
-            });
-          }
-
-          // Actualizar estado persistido
           estadoGuardadoUltimo.nombres = payload.nombres;
           estadoGuardadoUltimo.apellidos = payload.apellidos;
           estadoGuardadoUltimo.email = payload.email;
           estadoGuardadoUltimo.telefono = payload.telefono;
 
+          if (msjBox) {
+            if (errorBio) {
+              msjBox.innerHTML = '<div style="background-color: #fef2f2; color: #991b1b; padding: 0.7rem 1rem; border-radius: 0.65rem; border: 1px solid #fecaca; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem;">' + window.BEC.escaparHtml(errorBio) + '</div>';
+            } else {
+              msjBox.innerHTML = '<div style="background-color: #f0fdf4; color: #166534; padding: 0.7rem 1rem; border-radius: 0.65rem; border: 1px solid #bbf7d0; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem;">¡Perfil actualizado con éxito!</div>';
+            }
+          }
+
           cargarPerfilAPI();
           alternarModoEdicion(false);
         } else {
-          const errMsj = (res.data && (res.data.detail || JSON.stringify(res.data))) ? (res.data.detail || JSON.stringify(res.data)) : 'No se pudo guardar la información.';
+          btn.disabled = false;
+          btn.textContent = 'Guardar cambios';
+          const errMsj = window.BEC.extraerError(res && res.data, 'No se pudo guardar la información.');
           if (msjBox) {
-            msjBox.innerHTML = '<div style="background-color: #fef2f2; color: #991b1b; padding: 0.7rem 1rem; border-radius: 0.65rem; border: 1px solid #fecaca; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem;">' + errMsj + '</div>';
+            msjBox.innerHTML = '<div style="background-color: #fef2f2; color: #991b1b; padding: 0.7rem 1rem; border-radius: 0.65rem; border: 1px solid #fecaca; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem;">' + window.BEC.escaparHtml(errMsj) + '</div>';
           }
         }
       }).catch(function() {

@@ -303,12 +303,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var mapaCategorias = {};
     var categoriaActivaId = null;
 
-    if (btnLogout && window.BEC && window.BEC.cerrarSesion) {
-        btnLogout.addEventListener('click', function() {
-            window.BEC.cerrarSesion();
-        });
-    }
-
     function escapeHtml(texto) {
     if (!texto) return '';
     var div = document.createElement('div');
@@ -499,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function () {
         contenedorFiltros.innerHTML = opciones.map(function (op) {
             var clase = 'category-btn' + (categoriaActivaId === op.id ? ' active' : '');
             var dataId = op.id === null ? '' : op.id;
-            return '<button type="button" class="' + clase + '" data-categoria-id="' + dataId + '">' + op.nombre + '</button>';
+            return '<button type="button" class="' + clase + '" data-categoria-id="' + dataId + '">' + escapeHtml(op.nombre) + '</button>';
         }).join('');
 
         contenedorFiltros.querySelectorAll('.category-btn').forEach(function (btn) {
@@ -522,8 +516,8 @@ document.addEventListener('DOMContentLoaded', function () {
         var urlApiCategorias = window.BEC.cfg.api.categorias;
 
         Promise.all([
-            fetch(urlApiCategorias).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
-            fetch(urlApiServicios).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+            window.BEC.api(urlApiCategorias).then(function(r) { return r && r.ok ? r.data : null; }).catch(function() { return null; }),
+            window.BEC.api(urlApiServicios).then(function(r) { return r && r.ok ? r.data : null; }).catch(function() { return null; })
         ]).then(function(respuestas) {
             var dataCategorias = respuestas[0];
             var dataServicios = respuestas[1];

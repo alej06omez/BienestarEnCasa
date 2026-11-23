@@ -158,9 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
           let sectoresOriginal = z.barrio_sector || z.sectores || z.barrio || z.cobertura || 'Cobertura general';
           const zonaId = z.id;
 
-          // 2. Aplicamos el formato (reemplazar "_" por espacio y primera letra mayúscula)
-          const ciudad = ciudadOriginal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          const sectores = sectoresOriginal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          // 2. Aplicamos el formato (reemplazar "_" por espacio y primera letra mayúscula) y escapamos HTML
+          const ciudad = window.BEC.escaparHtml(ciudadOriginal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
+          const sectores = window.BEC.escaparHtml(sectoresOriginal.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()));
 
           // 3. Retornamos el HTML ya con las variables formateadas
           return `
@@ -211,40 +211,28 @@ document.addEventListener('DOMContentLoaded', function() {
     btnConfirmarModal.addEventListener('click', function() {
       if (!idZonaAEliminar) return;
 
-      const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-      const csrfToken = csrfInput ? csrfInput.value : '';
+      const textoOriginal = btnConfirmarModal.textContent;
+      btnConfirmarModal.textContent = 'Eliminando...';
+      btnConfirmarModal.disabled = true;
 
-      // Probamos la ruta estándar de eliminación REST
-      const urlDelete = `/api/proveedores/mis-zonas/${idZonaAEliminar}/`;
-
-      fetch(urlDelete, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'application/json'
-        },
-        credentials: 'same-origin'
+      window.BEC.api(window.BEC.url(window.BEC.cfg.api.zona, idZonaAEliminar), {
+        method: 'DELETE'
       }).then(function(res) {
         cerrarModalEliminarZona();
-        if (res.ok || res.status === 204) {
+        if (res && (res.ok || res.status === 204)) {
+          msjBox.innerHTML = '<div style="color: #166534; background-color: #f0fdf4; border: 1px solid #bbf7d0; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">Zona eliminada con éxito.</div>';
+          setTimeout(() => { msjBox.innerHTML = ''; }, 3000);
           cargarZonas();
         } else {
-          // Si falla, intentamos la ruta directa alternativa de zonas
-          return fetch(`/api/zonas-cobertura/${idZonaAEliminar}/`, {
-            method: 'DELETE',
-            headers: { 'X-CSRFToken': csrfToken },
-            credentials: 'same-origin'
-          });
-        }
-      }).then(function(resAlt) {
-        if (resAlt && (resAlt.ok || resAlt.status === 204)) {
-          cargarZonas();
-        } else if (resAlt) {
-          msjBox.innerHTML = '<div style="color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">No se pudo eliminar la zona de la base de datos. Verifique la vista en Django.</div>';
+          const err = window.BEC.extraerError(res && res.data, 'No se pudo eliminar la zona.');
+          msjBox.innerHTML = '<div style="color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">' + window.BEC.escaparHtml(err) + '</div>';
         }
       }).catch(function() {
         cerrarModalEliminarZona();
         msjBox.innerHTML = '<div style="color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">Error de conexión.</div>';
+      }).finally(function() {
+        btnConfirmarModal.textContent = textoOriginal;
+        btnConfirmarModal.disabled = false;
       });
     });
   }
@@ -281,15 +269,25 @@ document.addEventListener('DOMContentLoaded', function() {
             setTimeout(() => { msjBox.innerHTML = ''; }, 3000);
             cargarZonas();
           } else {
-            const err = (res.data && (res.data.detail || JSON.stringify(res.data))) ? (res.data.detail || JSON.stringify(res.data)) : 'No se pudo guardar la zona.';
-            msjBox.innerHTML = '<div style="color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">' + err + '</div>';
+            const err = window.BEC.extraerError(res && res.data, 'No se pudo guardar la zona.');
+            msjBox.innerHTML = '<div style="color: #991b1b; background-color: #fef2f2; border: 1px solid #fecaca; font-size: 0.85rem; font-weight: 700; padding: 0.6rem; border-radius: 0.6rem; margin-bottom: 1rem;">' + window.BEC.escaparHtml(err) + '</div>';
           }
         });
       }
     });
   }
 
-  cargarZonas();
+  window.BEC.requiereSesion(['PROVEEDOR']).then(function(perfil) {
+    if (!perfil) {
+      if (btnSubmit) btnSubmit.disabled = true;
+      contenedor.innerHTML = `
+        <div style="background-color: #ffffff; border-radius: 1rem; border: 1px solid #e2e8f0; padding: 2rem; text-align: center; color: #64748b;">
+          Solo las cuentas de tipo Proveedor pueden gestionar zonas de atención.
+        </div>`;
+      return;
+    }
+    cargarZonas();
+  });
 });
 </script>
 {% endblock %}

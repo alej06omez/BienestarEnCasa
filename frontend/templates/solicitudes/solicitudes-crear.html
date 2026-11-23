@@ -145,6 +145,16 @@
               </div>
             </div>
 
+            <!-- Selector rápido de dirección guardada (si el cliente tiene direcciones registradas) -->
+            <div id="bloqueDireccionesGuardadas" style="display: none; margin-bottom: 1.25rem;">
+              <label for="selectDireccionGuardada" style="display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 0.5rem;">
+                Usar una de mis direcciones guardadas (opcional)
+              </label>
+              <select id="selectDireccionGuardada" class="form-input-field">
+                <option value="">-- Escribir dirección manualmente --</option>
+              </select>
+            </div>
+
             <!-- HU-12 (E2 & E9): CAMPOS SEPARADOS DE DIRECCIÓN Y BARRIO/SECTOR -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 1.25rem;">
               <div>
@@ -340,16 +350,21 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    var urlServicio = '/api/catalogo/servicios/' + servicioIdUrl + '/';
-    
-    fetch(urlServicio)
-      .then(function(res) { return res.ok ? res.json() : null; })
-      .then(function(s) {
-        if (s) {
+    var urlServicio = window.BEC.url(window.BEC.cfg.api.servicio, servicioIdUrl);
+
+    window.BEC.api(urlServicio)
+      .then(function(res) {
+        if (res && res.ok && res.data) {
+          var s = res.data;
           servicioActual = s;
           if (namePreview) namePreview.textContent = s.nombre || s.titulo || 'Servicio de Bienestar';
           if (pricePreview) pricePreview.textContent = formatearDinero(s.precio);
           if (durationPreview) durationPreview.textContent = 'Duración: ' + (s.duracion_minutos || 60) + ' min';
+          if (String(s.estado || '').toUpperCase() !== 'ACTIVO') {
+            window.BEC.mensaje('Este servicio está inactivo y no acepta nuevas solicitudes.', 'error');
+            var btn = document.getElementById('btnEnviarSolicitud');
+            if (btn) btn.disabled = true;
+          }
           var prov = s.proveedor_id || (s.proveedor && (s.proveedor.id || s.proveedor));
           if (prov) cargarDisponibilidadProveedor(prov);
           actualizarCalculoHoraFin();
@@ -364,10 +379,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function cargarDesdeCatalogoGeneral() {
     var urlServicios = (window.BEC && window.BEC.cfg && window.BEC.cfg.api && window.BEC.cfg.api.servicios) ? window.BEC.cfg.api.servicios : '/api/catalogo/servicios/';
-    fetch(urlServicios)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        var lista = window.BEC && window.BEC.lista ? window.BEC.lista(data) : (Array.isArray(data) ? data : (data.results || []));
+    window.BEC.api(urlServicios)
+      .then(function(res) {
+        var lista = (res && res.ok) ? window.BEC.lista(res.data) : [];
         var encontrado = lista.find(function(item) { return String(item.id) === String(servicioIdUrl); });
         if (encontrado) {
           servicioActual = encontrado;
@@ -378,9 +392,13 @@ document.addEventListener('DOMContentLoaded', function() {
           if (prov2) cargarDisponibilidadProveedor(prov2);
           actualizarCalculoHoraFin();
         } else {
-          if (namePreview) namePreview.textContent = 'Servicio #' + servicioIdUrl;
+          if (namePreview) namePreview.textContent = 'Servicio no disponible';
+          window.BEC.mensaje('El servicio seleccionado no existe o no está disponible actualmente.', 'error');
+          var btn = document.getElementById('btnEnviarSolicitud');
+          if (btn) btn.disabled = true;
         }
-      });
+      })
+      .catch(function() {});
   }
 
   cargarDetalleServicio();
@@ -497,12 +515,18 @@ document.addEventListener('DOMContentLoaded', function() {
     var fin = franja.hora_fin.split(':').map(Number);
     var cursor = ini[0] * 60 + ini[1];
     var limite = fin[0] * 60 + fin[1];
+    var duracionMin = (servicioActual && servicioActual.duracion_minutos) ? Number(servicioActual.duracion_minutos) : 60;
     var html = '<option value="" disabled selected>Selecciona un horario (' + franja.hora_inicio + ' - ' + franja.hora_fin + ')</option>';
-    while (cursor < limite) {
+    var agregadas = 0;
+    while (cursor + duracionMin <= limite) {
       var hh = String(Math.floor(cursor / 60)).padStart(2, '0');
       var mm = String(cursor % 60).padStart(2, '0');
       html += '<option value="' + hh + ':' + mm + ':00">' + fmt12(hh + ':' + mm) + '</option>';
       cursor += 60;
+      agregadas += 1;
+    }
+    if (!agregadas) {
+      html = '<option value="" disabled selected>La duración del servicio excede la franja disponible</option>';
     }
     selectHorario.innerHTML = html;
     quitarHorariosPasados(valorFecha);
@@ -520,16 +544,44 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  function formatearBarrio(b) {
+    return String(b || '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }).trim();
+  }
+
+  var direccionesGuardadas = [];
+  var selectDirGuardada = document.getElementById('selectDireccionGuardada');
+  var bloqueDirGuardadas = document.getElementById('bloqueDireccionesGuardadas');
+
+  function rellenarConDireccion(dir) {
+    if (!dir) return;
+    var elDir = document.getElementById('direccion_atencion');
+    var elBarrio = document.getElementById('barrio_sector');
+    var elObs = document.getElementById('observaciones');
+    if (elDir) elDir.value = dir.direccion || '';
+    if (elBarrio) elBarrio.value = formatearBarrio(dir.barrio);
+    if (elObs && !elObs.value.trim() && dir.complemento) elObs.value = dir.complemento;
+  }
+
+  if (selectDirGuardada) {
+    selectDirGuardada.addEventListener('change', function() {
+      var idSel = this.value;
+      if (!idSel) return;
+      var encontrada = direccionesGuardadas.find(function(d) { return String(d.id) === String(idSel); });
+      if (encontrada) rellenarConDireccion(encontrada);
+    });
+  }
+
   if (window.BEC && window.BEC.api) {
     window.BEC.api('/api/usuarios/perfil/').then(function(res) {
       if (res && res.ok && res.data) {
         var perfil = res.data.usuario || res.data;
+        var rol = String(perfil.rol || '').toUpperCase();
         var inputNombre = document.getElementById('nombre_cliente');
         var inputEmail = document.getElementById('email_cliente');
         var inputTelefono = document.getElementById('telefono_cliente');
 
         if (inputNombre && (perfil.nombres || perfil.first_name)) {
-          inputNombre.value = (perfil.nombres || perfil.first_name) + ' ' + (perfil.apellidos || perfil.last_name || '');
+          inputNombre.value = ((perfil.nombres || perfil.first_name) + ' ' + (perfil.apellidos || perfil.last_name || '')).trim();
         }
         if (inputEmail && (perfil.email || perfil.correo)) {
           inputEmail.value = perfil.email || perfil.correo;
@@ -537,8 +589,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (inputTelefono && perfil.telefono) {
           inputTelefono.value = perfil.telefono;
         }
+
+        if (rol === 'PROVEEDOR' || rol === 'PRO') {
+          window.BEC.mensaje('Solo las cuentas de tipo Cliente pueden solicitar servicios.', 'error');
+          var btn = document.getElementById('btnEnviarSolicitud');
+          if (btn) btn.disabled = true;
+          return;
+        }
+
+        window.BEC.api(window.BEC.cfg.api.direcciones).then(function(resDir) {
+          if (resDir && resDir.ok) {
+            direccionesGuardadas = window.BEC.lista(resDir.data);
+            if (direccionesGuardadas.length > 0 && bloqueDirGuardadas && selectDirGuardada) {
+              bloqueDirGuardadas.style.display = 'block';
+              selectDirGuardada.innerHTML = '<option value="">-- Selecciona una dirección guardada --</option>' +
+                direccionesGuardadas.map(function(d) {
+                  var label = (d.direccion || '') + (d.barrio ? ' - ' + formatearBarrio(d.barrio) : '') + (d.es_principal ? ' (Principal)' : '');
+                  return '<option value="' + d.id + '">' + window.BEC.escaparHtml(label) + '</option>';
+                }).join('');
+              var principal = direccionesGuardadas.find(function(d) { return d.es_principal; }) || direccionesGuardadas[0];
+              if (principal) {
+                selectDirGuardada.value = String(principal.id);
+                rellenarConDireccion(principal);
+              }
+            }
+          }
+        }).catch(function() {});
       }
-    });
+    }).catch(function() {});
   }
 
   if (form) {
@@ -574,23 +652,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (hayError) return;
 
-      var csrfToken = '';
-      var csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-      if (csrfInput) csrfToken = csrfInput.value;
+      if (!servicioActual) {
+        window.BEC.mensaje('No se pudo identificar el servicio seleccionado. Recarga la página.', 'error');
+        return;
+      }
 
-      var proveedorId = servicioActual ? (servicioActual.proveedor_id || (servicioActual.proveedor ? (servicioActual.proveedor.id || servicioActual.proveedor) : 1)) : 1;
+      var proveedorId = servicioActual.proveedor_id || (servicioActual.proveedor && (servicioActual.proveedor.id || servicioActual.proveedor));
       var observacionesVal = document.getElementById('observaciones').value.trim();
 
       // HU-12 (E2 & E9): Enviar campos de dirección y barrio independientes
       var payload = {
-        servicio: parseInt(servicioIdUrl),
-        proveedor: parseInt(proveedorId),
+        servicio: parseInt(servicioIdUrl, 10),
         fecha_solicitada: inputFecha.value,
         hora_solicitada: selectHorario.value,
         direccion_atencion: direccionVal,
         barrio_sector: barrioVal,
         observaciones: observacionesVal
       };
+      if (proveedorId) payload.proveedor = parseInt(proveedorId, 10);
 
       var btnSubmit = document.getElementById('btnEnviarSolicitud');
       if (btnSubmit) {
@@ -598,22 +677,17 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSubmit.textContent = 'Enviando...';
       }
 
-      fetch('/api/solicitudes/', {
+      window.BEC.api(window.BEC.cfg.api.solicitudes, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken
-        },
-        credentials: 'same-origin',
-        body: JSON.stringify(payload)
+        body: payload
       })
-      .then(function(response) {
+      .then(function(res) {
         if (btnSubmit) {
           btnSubmit.disabled = false;
           btnSubmit.textContent = 'Enviar solicitud';
         }
 
-        if (response.status === 201 || response.ok) {
+        if (res && (res.status === 201 || res.ok)) {
           var msgs = document.getElementById('mensajes');
           if (msgs) {
             msgs.innerHTML = `
@@ -634,20 +708,37 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             msgs.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-          form.reset();
+          // Limpiar solo los campos de la cita, conservando datos personales y dirección
+          inputFecha.value = '';
+          selectHorario.value = '';
+          document.getElementById('observaciones').value = '';
+          if (calculoHoraFinDiv) calculoHoraFinDiv.style.display = 'none';
         } else {
-          return response.json().then(function(data) {
-            var msgs = document.getElementById('mensajes');
-            if (msgs) {
-              var textoError = '';
-              for (var key in data) {
-                var campo = key.toUpperCase().replace('_', ' ');
-                var detalle = Array.isArray(data[key]) ? data[key].join(' ') : data[key];
-                textoError += '<b>' + campo + ':</b> ' + detalle + '<br>';
-              }
-              msgs.innerHTML = '<div style="background-color:#FEF2F2; color:#DC2626; padding:12px 16px; border-radius:12px; font-weight:600; margin-bottom:16px; border:1px solid #FECACA;">' + textoError + '</div>';
+          var msgs = document.getElementById('mensajes');
+          if (msgs) {
+            var etiquetas = {
+              fecha_solicitada: 'Fecha',
+              hora_solicitada: 'Horario',
+              direccion_atencion: 'Dirección',
+              barrio_sector: 'Barrio o sector',
+              servicio: 'Servicio',
+              detail: 'Aviso'
+            };
+            var data = res && res.data;
+            var textoError = '';
+            if (data && typeof data === 'object') {
+              Object.keys(data).forEach(function(key) {
+                var campo = etiquetas[key] || key.replace(/_/g, ' ');
+                var detalle = Array.isArray(data[key]) ? data[key].join(' ') : String(data[key]);
+                textoError += '<b>' + window.BEC.escaparHtml(campo) + ':</b> ' + window.BEC.escaparHtml(detalle) + '<br>';
+              });
             }
-          });
+            if (!textoError) {
+              textoError = 'No se pudo enviar la solicitud. Revisa los datos e intenta de nuevo.';
+            }
+            msgs.innerHTML = '<div style="background-color:#FEF2F2; color:#DC2626; padding:12px 16px; border-radius:12px; font-weight:600; margin-bottom:16px; border:1px solid #FECACA;">' + textoError + '</div>';
+            msgs.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }
       })
       .catch(function(err) {
@@ -656,6 +747,7 @@ document.addEventListener('DOMContentLoaded', function() {
           btnSubmit.textContent = 'Enviar solicitud';
         }
         console.error("Error al enviar solicitud:", err);
+        window.BEC.mensaje('Error de conexión al enviar la solicitud.', 'error');
       });
     });
   }

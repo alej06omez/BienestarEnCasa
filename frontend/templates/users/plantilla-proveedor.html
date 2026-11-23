@@ -38,6 +38,9 @@
       </div>
     </div>
 
+    <!-- Mensajes de retroalimentación Sprint 3 -->
+    <div id="msjPanelProveedor" aria-live="polite" style="margin-bottom: 1rem;"></div>
+
     <!-- Barra de Pestañas -->
     <div style="display: flex; gap: 0.5rem; background-color: #f1f5f9; padding: 0.4rem; border-radius: 1.1rem; margin-bottom: 1.5rem;">
       
@@ -81,9 +84,18 @@
 
       <!-- Sección Respondidas -->
       <div>
-        <h2 style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 1rem 0;">
-          RESPONDIDAS
-        </h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+          <h2 style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">
+            GESTIONADAS / AGENDA
+          </h2>
+          <select id="filtroEstadoRespondidas" style="padding: 0.45rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; background-color: #ffffff; color: #334155; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+            <option value="">Todos los estados</option>
+            <option value="SUGERIDA">Contrapropuesta enviada</option>
+            <option value="ACEPTADA">Aceptadas</option>
+            <option value="COMPLETADA">Completadas</option>
+            <option value="CANCELADA">Canceladas / Rechazadas</option>
+          </select>
+        </div>
         <div id="contenedorRespondidas" style="display: flex; flex-direction: column; gap: 1rem;">
           <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 2.5rem; text-align: center; color: #64748b;">
             No tienes solicitudes respondidas aún.
@@ -187,13 +199,13 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function obtenerTelefonoCliente(s) {
-    if (!s) return '+57 300 000 0000';
+    if (!s) return 'Sin teléfono registrado';
     if (s.cliente_telefono) return s.cliente_telefono;
     if (s.telefono_cliente) return s.telefono_cliente;
     if (s.cliente && typeof s.cliente === 'object' && s.cliente.telefono) {
       return s.cliente.telefono;
     }
-    return '+57 300 000 0000';
+    return 'Sin teléfono registrado';
   }
 
   function obtenerFecha(s) {
@@ -210,18 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function obtenerHora(s) {
     const rawHora = s.hora_solicitada || s.hora_preferida || s.hora;
-    if (!rawHora) return '08:00 AM';
-    if (rawHora.includes('08:00')) return '08:00 AM';
-    if (rawHora.includes('09:00')) return '09:00 AM';
-    if (rawHora.includes('10:00')) return '10:00 AM';
-    if (rawHora.includes('11:00')) return '11:00 AM';
-    if (rawHora.includes('12:00')) return '12:00 PM';
-    if (rawHora.includes('13:00') || rawHora.includes('01:00')) return '01:00 PM';
-    if (rawHora.includes('14:00') || rawHora.includes('02:00')) return '02:00 PM';
-    if (rawHora.includes('15:00') || rawHora.includes('03:00')) return '03:00 PM';
-    if (rawHora.includes('16:00') || rawHora.includes('04:00')) return '04:00 PM';
-    if (rawHora.includes('17:00') || rawHora.includes('05:00')) return '05:00 PM';
-    return rawHora;
+    if (!rawHora) return 'Hora por confirmar';
+    return formatearHoraLectura(rawHora);
   }
 
   // Función auxiliar para calcular la hora de finalización (E2)
@@ -266,6 +268,58 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  const msjPanel = document.getElementById('msjPanelProveedor');
+  const filtroEstadoRespondidas = document.getElementById('filtroEstadoRespondidas');
+
+  function escaparHtml(valor) {
+    if (valor === null || valor === undefined) return '';
+    var div = document.createElement('div');
+    div.textContent = String(valor);
+    return div.innerHTML;
+  }
+
+  function extraerErrorApi(data, respaldo) {
+    if (!data) return respaldo;
+    if (typeof data === 'string') return data;
+    if (data.detail) return String(data.detail);
+    var partes = [];
+    Object.keys(data).forEach(function(k) {
+      var v = data[k];
+      if (Array.isArray(v)) partes.push(v.join(' '));
+      else if (typeof v === 'string') partes.push(v);
+    });
+    return partes.length ? partes.join(' ') : respaldo;
+  }
+
+  function mostrarMensajePanel(texto, tipo) {
+    if (!msjPanel) return;
+    var esError = tipo === 'error';
+    msjPanel.innerHTML = '<div style="background-color:' + (esError ? '#fef2f2' : '#f0fdf4') + '; color:' + (esError ? '#991b1b' : '#166534') + '; border:1px solid ' + (esError ? '#fecaca' : '#bbf7d0') + '; padding: 0.9rem 1.25rem; border-radius: 0.85rem; font-weight: 600; font-size: 0.9rem;">' + escaparHtml(texto) + '</div>';
+    msjPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function formatearFechaCorta(rawFecha) {
+    if (!rawFecha) return 'Fecha por confirmar';
+    try {
+      const d = new Date(rawFecha + (rawFecha.includes('T') ? '' : 'T00:00:00'));
+      if (isNaN(d.getTime())) return rawFecha;
+      return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) {
+      return rawFecha;
+    }
+  }
+
+  function formatearFechaHora(raw) {
+    if (!raw) return '';
+    try {
+      const d = new Date(raw);
+      if (isNaN(d.getTime())) return raw;
+      return d.toLocaleString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return raw;
+    }
+  }
+
   function cargarDatosProveedor() {
     window.BEC.api(window.BEC.cfg.api.solicitudes, { method: 'GET' })
       .then(function(res) {
@@ -278,33 +332,60 @@ document.addEventListener('DOMContentLoaded', function() {
         todasLasSolicitudes = window.BEC.lista(res.data);
 
         const pendientes = todasLasSolicitudes.filter(s => (s.estado || '').toUpperCase() === 'PENDIENTE');
-        const clientes = todasLasSolicitudes.filter(s => ['ACEPTADA', 'ACEPTADO', 'REALIZADO', 'COMPLETADO'].includes((s.estado || '').toUpperCase()));
+        const clientes = todasLasSolicitudes.filter(s => ['ACEPTADA', 'COMPLETADA'].includes((s.estado || '').toUpperCase()));
 
         document.getElementById('stat-pendientes').innerText = pendientes.length;
         document.getElementById('stat-clientes').innerText = clientes.length;
         document.getElementById('badge-count-pendientes').innerText = pendientes.length;
 
         renderizarSeccionesSolicitudes(todasLasSolicitudes);
+        const tabClientes = document.getElementById('tab-clientes');
+        if (tabClientes && tabClientes.style.display !== 'none') {
+          renderizarClientes();
+        }
       })
       .catch(function(err) {
         console.error("Error al cargar solicitudes:", err);
       });
   }
 
+  function badgeEstadoProveedor(sol) {
+    const estado = (sol.estado || 'PENDIENTE').toUpperCase();
+    if (estado === 'SUGERIDA') {
+      return `<span style="background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">⏳ Contrapropuesta enviada</span>`;
+    }
+    if (estado === 'ACEPTADA') {
+      return `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✓ Aceptada</span>`;
+    }
+    if (estado === 'COMPLETADA') {
+      return `<span style="background-color: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✔ Completada</span>`;
+    }
+    if (estado === 'CANCELADA') {
+      const etiqueta = sol.cancelado_por === 'CLIENTE' ? 'Cancelada por cliente' : 'Cancelada / Rechazada';
+      return `<span style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✕ ${etiqueta}</span>`;
+    }
+    return `<span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">Pendiente</span>`;
+  }
+
   function renderizarSeccionesSolicitudes(lista) {
     const contenedorPorResponder = document.getElementById('contenedorPorResponder');
     const contenedorRespondidas = document.getElementById('contenedorRespondidas');
+    const estadoFiltro = filtroEstadoRespondidas ? filtroEstadoRespondidas.value : '';
 
     const pendientes = lista.filter(s => (s.estado || '').toUpperCase() === 'PENDIENTE');
-    
+
     // Respondidas ordenadas cronológicamente por fecha y hora de atención
-    const respondidas = lista
+    let respondidas = lista
       .filter(s => (s.estado || '').toUpperCase() !== 'PENDIENTE')
       .sort((a, b) => {
         const fechaA = `${a.fecha_solicitada || ''}T${a.hora_solicitada || '00:00:00'}`;
         const fechaB = `${b.fecha_solicitada || ''}T${b.hora_solicitada || '00:00:00'}`;
         return fechaA.localeCompare(fechaB);
       });
+
+    if (estadoFiltro) {
+      respondidas = respondidas.filter(s => (s.estado || '').toUpperCase() === estadoFiltro);
+    }
 
     if (pendientes.length === 0) {
       contenedorPorResponder.innerHTML = `
@@ -313,10 +394,14 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`;
     } else {
       contenedorPorResponder.innerHTML = pendientes.map(sol => {
-        const cliente = obtenerNombreCliente(sol);
-        const servicio = obtenerNombreServicio(sol);
-        const fecha = obtenerFecha(sol);
-        const hora = obtenerHora(sol);
+        const cliente = escaparHtml(obtenerNombreCliente(sol));
+        const servicio = escaparHtml(obtenerNombreServicio(sol));
+        const fecha = escaparHtml(obtenerFecha(sol));
+        const hora = escaparHtml(obtenerHora(sol));
+        const duracion = sol.duracion_minutos_copia || 60;
+        const horaFin = escaparHtml(calcularHoraFin(sol.hora_solicitada || hora, duracion));
+        const direccion = escaparHtml((sol.direccion_atencion || 'Dirección no especificada').replace(/\(Principal\)/gi, '').trim());
+        const barrio = sol.barrio_sector ? ` (${escaparHtml(sol.barrio_sector)})` : '';
 
         const rawNota = (sol.informacion_complementaria || sol.observaciones || sol.notas_adicionales || sol.descripcion || '').trim();
         const mostrarNota = rawNota !== '' && rawNota.toLowerCase() !== 'dirección del perfil' && rawNota.toLowerCase() !== 'direccion del perfil';
@@ -334,38 +419,37 @@ document.addEventListener('DOMContentLoaded', function() {
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">${cliente}</h3>
             <p style="color: #0d9488; font-size: 0.95rem; font-weight: 600; margin: 0 0 0.85rem 0;">${servicio}</p>
 
-            <div style="display: flex; gap: 1.25rem; align-items: center; color: #64748b; font-size: 0.85rem; margin-bottom: ${mostrarNota ? '1rem' : '1.25rem'}; flex-wrap: wrap;">
-              <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                <svg style="width: 1rem; height: 1rem; color: #94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                ${fecha}
-              </span>
-              <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                <svg style="width: 1rem; height: 1rem; color: #94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                ${hora}
-              </span>
+            <div style="display: flex; gap: 1.25rem; align-items: center; color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+              <span>📅 ${fecha}</span>
+              <span>🕒 ${hora}${horaFin ? ' - ' + horaFin : ''}</span>
+              <span>📍 ${direccion}${barrio}</span>
             </div>
 
             ${mostrarNota ? `
-              <div style="background-color: #f8fafc; border-radius: 0.75rem; padding: 0.85rem 1rem; color: #475569; font-size: 0.9rem; font-style: italic; margin-bottom: 1.25rem;">
-                "${rawNota}"
+              <div style="background-color: #f8fafc; border-radius: 0.75rem; padding: 0.85rem 1rem; color: #475569; font-size: 0.9rem; font-style: italic; margin: 0.75rem 0 1.25rem 0;">
+                "${escaparHtml(rawNota)}"
               </div>
-            ` : ''}
+            ` : '<div style="margin-bottom: 1rem;"></div>'}
 
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <button onclick="responderSolicitud(${sol.id}, 'ACEPTADA')" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="aceptarSolicitud(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 Aceptar
               </button>
 
-              <button onclick="contraproponer(${sol.id})" style="background-color: #ffffff; color: #2563eb; border: 1px solid #93c5fd; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="contraproponer(${sol.id})" style="background-color: #ffffff; color: #2563eb; border: 1px solid #93c5fd; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Contraproponer horario
               </button>
 
-              <button onclick="responderSolicitud(${sol.id}, 'RECHAZADA')" style="background-color: #ffffff; color: #ef4444; border: 1px solid #fca5a5; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="abrirModalRechazo(${sol.id})" style="background-color: #ffffff; color: #ef4444; border: 1px solid #fca5a5; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 Rechazar
               </button>
+
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.65rem 1rem; border-radius: 0.65rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.85rem;">
+                Ver detalle
+              </a>
             </div>
 
           </div>
@@ -376,32 +460,86 @@ document.addEventListener('DOMContentLoaded', function() {
     if (respondidas.length === 0) {
       contenedorRespondidas.innerHTML = `
         <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 2rem; text-align: center; color: #64748b;">
-          No tienes solicitudes respondidas aún.
+          No hay solicitudes en esta categoría.
         </div>`;
     } else {
       contenedorRespondidas.innerHTML = respondidas.map(sol => {
-        const cliente = obtenerNombreCliente(sol);
-        const servicio = obtenerNombreServicio(sol);
-        const fecha = obtenerFecha(sol);
-        const horaInicio = obtenerHora(sol);
+        const cliente = escaparHtml(obtenerNombreCliente(sol));
+        const servicio = escaparHtml(obtenerNombreServicio(sol));
+        const fecha = escaparHtml(obtenerFecha(sol));
+        const horaInicio = escaparHtml(obtenerHora(sol));
         const duracion = sol.duracion_minutos_copia || 60;
-        const horaFin = calcularHoraFin(sol.hora_solicitada || horaInicio, duracion);
-        
-        // E3: Dirección limpia sin la palabra (Principal)
-        let direccionCruda = sol.direccion_atencion || 'Dirección no especificada';
-        const direccion = direccionCruda.replace(/\(Principal\)/gi, '').trim();
-        const barrio = sol.barrio_sector ? ` (${sol.barrio_sector})` : '';
+        const horaFin = escaparHtml(calcularHoraFin(sol.hora_solicitada || horaInicio, duracion));
 
-        const estado = (sol.estado || 'ACEPTADA').toUpperCase();
-        const esAceptada = estado === 'ACEPTADA' || estado === 'ACEPTADO';
+        let direccionCruda = sol.direccion_atencion || 'Dirección no especificada';
+        const direccion = escaparHtml(direccionCruda.replace(/\(Principal\)/gi, '').trim());
+        const barrio = sol.barrio_sector ? ` (${escaparHtml(sol.barrio_sector)})` : '';
+
+        const estado = (sol.estado || '').toUpperCase();
+
+        let bloqueExtra = '';
+        if (estado === 'SUGERIDA' && sol.hora_sugerida) {
+          const fechaSug = escaparHtml(formatearFechaCorta(sol.fecha_sugerida || sol.fecha_solicitada));
+          const horaSug = escaparHtml(formatearHoraLectura(sol.hora_sugerida));
+          const horaSugFin = escaparHtml(calcularHoraFin(sol.hora_sugerida, duracion));
+          bloqueExtra = `
+            <div style="margin-top: 0.6rem; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.65rem; padding: 0.6rem 0.85rem; font-size: 0.85rem; color: #9a3412;">
+              <strong>Horario propuesto:</strong> ${fechaSug} · ${horaSug}${horaSugFin ? ' - ' + horaSugFin : ''}
+              ${sol.comentario_contrapropuesta ? `<div style="margin-top: 0.25rem; font-style: italic;">"${escaparHtml(sol.comentario_contrapropuesta)}"</div>` : ''}
+            </div>`;
+        } else if (estado === 'CANCELADA' && sol.motivo_rechazo_cancelacion) {
+          bloqueExtra = `
+            <div style="margin-top: 0.6rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: 0.82rem; color: #991b1b;">
+              <strong>Motivo:</strong> ${escaparHtml(sol.motivo_rechazo_cancelacion)}
+            </div>`;
+        } else if (estado === 'COMPLETADA') {
+          const fechaCierre = sol.completado_en ? ` el ${escaparHtml(formatearFechaHora(sol.completado_en))}` : '';
+          bloqueExtra = `
+            <div style="margin-top: 0.6rem; background-color: #f0fdfa; border: 1px solid #99f6e4; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: 0.82rem; color: #115e59;">
+              <strong>Servicio finalizado${fechaCierre}</strong>
+              ${sol.observaciones_finalizacion ? `<div>${escaparHtml(sol.observaciones_finalizacion)}</div>` : ''}
+            </div>`;
+        }
+
+        let botonesAccion = '';
+        if (estado === 'ACEPTADA') {
+          botonesAccion = `
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
+              <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+                ✓ Finalizar servicio
+              </button>
+              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+                Cancelar reserva
+              </button>
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.5rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+                Ver detalle
+              </a>
+            </div>`;
+        } else if (estado === 'SUGERIDA') {
+          botonesAccion = `
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
+              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.9rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+                Cancelar solicitud
+              </button>
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+                Ver detalle
+              </a>
+            </div>`;
+        } else {
+          botonesAccion = `
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+                Ver detalle
+              </a>
+            </div>`;
+        }
 
         return `
-          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <div>
+          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 260px;">
               <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h3>
               <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 0.4rem 0;">${servicio}</p>
-              
-              <!-- E2 y E3: Horarios completos y Dirección -->
+
               <div style="display: flex; gap: 1rem; color: #64748b; font-size: 0.85rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
                 <span>📅 <strong>${fecha}</strong></span>
                 <span>🕒 ${horaInicio} - ${horaFin}</span>
@@ -409,19 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
               <div style="color: #475569; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.3rem;">
                 📍 <strong>Dirección:</strong> ${direccion}${barrio}
               </div>
+              ${bloqueExtra}
             </div>
 
-            <div>
-              ${esAceptada ? `
-                <span style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.35rem;">
-                  <svg style="width: 0.85rem; height: 0.85rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  Aceptada
-                </span>
-              ` : `
-                <span style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">
-                  Rechazada
-                </span>
-              `}
+            <div style="text-align: right;">
+              ${badgeEstadoProveedor(sol)}
+              ${botonesAccion}
             </div>
           </div>
         `;
@@ -429,13 +560,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  if (filtroEstadoRespondidas) {
+    filtroEstadoRespondidas.addEventListener('change', function() {
+      renderizarSeccionesSolicitudes(todasLasSolicitudes);
+    });
+  }
+
   function renderizarClientes() {
     const contenedor = document.getElementById('contenedorClientes');
     if (!contenedor) return;
 
-    // Clientes/Citas aceptadas ordenadas cronológicamente
+    // Clientes/Citas aceptadas o completadas ordenadas cronológicamente
     const aceptadas = todasLasSolicitudes
-      .filter(s => ['ACEPTADA', 'ACEPTADO', 'REALIZADO', 'COMPLETADO'].includes((s.estado || '').toUpperCase()))
+      .filter(s => ['ACEPTADA', 'COMPLETADA'].includes((s.estado || '').toUpperCase()))
       .sort((a, b) => {
         const fechaA = `${a.fecha_solicitada || ''}T${a.hora_solicitada || '00:00:00'}`;
         const fechaB = `${b.fecha_solicitada || ''}T${b.hora_solicitada || '00:00:00'}`;
@@ -451,17 +588,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     contenedor.innerHTML = aceptadas.map(sol => {
-      const cliente = obtenerNombreCliente(sol);
-      const servicio = obtenerNombreServicio(sol);
-      const fecha = obtenerFecha(sol);
-      const horaInicio = obtenerHora(sol);
+      const cliente = escaparHtml(obtenerNombreCliente(sol));
+      const servicio = escaparHtml(obtenerNombreServicio(sol));
+      const fecha = escaparHtml(obtenerFecha(sol));
+      const horaInicio = escaparHtml(obtenerHora(sol));
       const duracion = sol.duracion_minutos_copia || 60;
-      const horaFin = calcularHoraFin(sol.hora_solicitada || horaInicio, duracion);
-      const telefono = obtenerTelefonoCliente(sol);
-      
+      const horaFin = escaparHtml(calcularHoraFin(sol.hora_solicitada || horaInicio, duracion));
+      const telefono = escaparHtml(obtenerTelefonoCliente(sol));
+      const estado = (sol.estado || '').toUpperCase();
+
       let direccionCruda = sol.direccion_atencion || 'Dirección no especificada';
-      const direccion = direccionCruda.replace(/\(Principal\)/gi, '').trim();
-      const barrio = sol.barrio_sector ? ` (${sol.barrio_sector})` : '';
+      const direccion = escaparHtml(direccionCruda.replace(/\(Principal\)/gi, '').trim());
+      const barrio = sol.barrio_sector ? ` (${escaparHtml(sol.barrio_sector)})` : '';
 
       return `
         <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -471,9 +609,19 @@ document.addEventListener('DOMContentLoaded', function() {
             <p style="color: #64748b; font-size: 0.8rem; margin: 0 0 0.2rem 0;">📅 ${fecha} (${horaInicio} - ${horaFin}) • 📞 ${telefono}</p>
             <p style="color: #475569; font-size: 0.8rem; margin: 0;">📍 ${direccion}${barrio}</p>
           </div>
-          <span style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-weight: 700; font-size: 0.8rem; padding: 0.35rem 0.85rem; border-radius: 9999px;">
-            ✓ Aceptada
-          </span>
+          <div style="text-align: right;">
+            ${badgeEstadoProveedor(sol)}
+            ${estado === 'ACEPTADA' ? `
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+                <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                  ✓ Finalizar
+                </button>
+                <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                  Cancelar
+                </button>
+              </div>
+            ` : ''}
+          </div>
         </div>
       `;
     }).join('');
@@ -481,24 +629,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const NOMBRES_DIA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 
-  function csrf() {
-    var csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
-    return csrfInput ? csrfInput.value : '';
-  }
-
-  async function apiJson(url, opts) {
-    const res = await fetch(url, Object.assign({credentials:'same-origin', headers:{'X-CSRFToken': csrf()}}, opts || {}));
-    const data = res.status === 204 ? null : await res.json().catch(() => null);
-    if (!res.ok) throw data || new Error('error');
-    return data;
-  }
-
   async function cargarHorarioPanel() {
     const resumen = document.getElementById('resumenHorarioReal');
     try {
-      const data = await apiJson('/api/proveedores/disponibilidad/');
-      disponibilidadProveedor = Array.isArray(data) ? data : (data.results || []);
-      
+      const res = await window.BEC.api(window.BEC.cfg.api.disponibilidad);
+      if (!res || !res.ok) throw new Error('error');
+      disponibilidadProveedor = window.BEC.lista(res.data);
+
       if (!disponibilidadProveedor.length) {
         resumen.textContent = 'Aún no hay horario guardado.';
       } else {
@@ -509,32 +646,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  cargarHorarioPanel();
-
-  window.responderSolicitud = function(id, nuevoEstado) {
-    window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitud, id), {
-      method: 'PATCH',
-      body: { estado: nuevoEstado }
+  // HU-15: Aceptar solicitud
+  window.aceptarSolicitud = function(id) {
+    window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitudAceptar, id), {
+      method: 'POST',
+      body: {}
     }).then(function(res) {
       if (!res.ok) {
-        var detalle = (res.data && res.data.detail) ? res.data.detail : 'Inténtalo de nuevo.';
-        alert('No se pudo actualizar la solicitud: ' + detalle);
+        mostrarMensajePanel(extraerErrorApi(res.data, 'No se pudo aceptar la solicitud.'), 'error');
         return;
       }
+      mostrarMensajePanel('¡Solicitud aceptada y agregada a tu agenda!', 'ok');
       cargarDatosProveedor();
     }).catch(function() {
-      alert('Error de conexión al actualizar la solicitud.');
+      mostrarMensajePanel('Error de conexión al aceptar la solicitud.', 'error');
     });
   };
 
+  // HU-15: Contraproponer horario (fecha + hora + comentario)
   var modalContraproponer = document.getElementById('modalContraproponer');
+  var errModalContraproponer = document.getElementById('errModalContraproponer');
   var btnCancelarContrapropuesta = document.getElementById('btnCancelarContrapropuesta');
   var btnConfirmarContrapropuesta = document.getElementById('btnConfirmarContrapropuesta');
-  var solicitudIdContrapropuesta = null;
+  var inputFechaContrapropuesta = document.getElementById('inputFechaContrapropuesta');
   var selectFranja = document.getElementById('selectFranjaHoraria');
+  var inputComentarioContrapropuesta = document.getElementById('inputComentarioContrapropuesta');
+  var solicitudIdContrapropuesta = null;
+
+  function mostrarErrorEnModal(el, texto) {
+    if (!el) return;
+    el.innerHTML = texto
+      ? '<div style="background-color:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding: 0.6rem 0.8rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 600;">' + escaparHtml(texto) + '</div>'
+      : '';
+  }
 
   function formatearHoraLectura(h24Str) {
-    var partes = h24Str.split(':');
+    if (!h24Str) return '';
+    var partes = String(h24Str).split(':');
     var h = parseInt(partes[0], 10);
     var m = partes[1] || '00';
     var ampm = h >= 12 ? 'PM' : 'AM';
@@ -544,46 +692,88 @@ document.addEventListener('DOMContentLoaded', function() {
     return hFormat + ':' + m + ' ' + ampm;
   }
 
+  var duracionContrapropuesta = 60;
+
+  function poblarFranjasParaFecha(fechaIso) {
+    selectFranja.innerHTML = '<option value="">-- Selecciona una hora disponible --</option>';
+
+    var ahora = new Date();
+    var fechaHoy = ahora.getFullYear() + '-' + String(ahora.getMonth() + 1).padStart(2, '0') + '-' + String(ahora.getDate()).padStart(2, '0');
+    var minActuales = (fechaIso === fechaHoy) ? (ahora.getHours() * 60 + ahora.getMinutes()) : -1;
+
+    if (fechaIso) {
+      var d = new Date(fechaIso + (fechaIso.includes('T') ? '' : 'T00:00:00'));
+      var diaJS = d.getDay();
+      var mapaDiaBackend = (diaJS === 0) ? 6 : (diaJS - 1);
+
+      if (disponibilidadProveedor.length > 0) {
+        var horarioDia = disponibilidadProveedor.find(h => Number(h.dia_semana) === mapaDiaBackend);
+        if (!horarioDia) {
+          selectFranja.innerHTML = '<option value="">No atiendes este día (elige otra fecha)</option>';
+          return;
+        }
+        var pIni = horarioDia.hora_inicio.split(':').map(Number);
+        var pFin = horarioDia.hora_fin.split(':').map(Number);
+        var cursor = pIni[0] * 60 + pIni[1];
+        var limite = pFin[0] * 60 + pFin[1];
+        while (cursor + duracionContrapropuesta <= limite) {
+          if (cursor > minActuales) {
+            var hh = String(Math.floor(cursor / 60)).padStart(2, '0');
+            var mm = String(cursor % 60).padStart(2, '0');
+            var h24 = hh + ':' + mm + ':00';
+            var opt = document.createElement('option');
+            opt.value = h24;
+            opt.textContent = formatearHoraLectura(h24);
+            selectFranja.appendChild(opt);
+          }
+          cursor += 60;
+        }
+        if (selectFranja.options.length <= 1) {
+          selectFranja.innerHTML = '<option value="">No quedan franjas disponibles para esta fecha</option>';
+        }
+        return;
+      }
+
+      // Horario por defecto si el proveedor aún no ha configurado disponibilidad (Lunes a Viernes 08:00-17:00)
+      if (diaJS === 0 || diaJS === 6) {
+        selectFranja.innerHTML = '<option value="">Atención por defecto solo de Lunes a Viernes</option>';
+        return;
+      }
+    }
+
+    for (var h = 8; h <= 16; h++) {
+      if (h * 60 <= minActuales) continue;
+      var h24Def = (h < 10 ? '0' + h : h) + ':00:00';
+      var optDef = document.createElement('option');
+      optDef.value = h24Def;
+      optDef.textContent = formatearHoraLectura(h24Def);
+      selectFranja.appendChild(optDef);
+    }
+    if (selectFranja.options.length <= 1) {
+      selectFranja.innerHTML = '<option value="">No quedan franjas disponibles para esta fecha</option>';
+    }
+  }
+
+  if (inputFechaContrapropuesta) {
+    var hoy = new Date();
+    inputFechaContrapropuesta.min = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0') + '-' + String(hoy.getDate()).padStart(2, '0');
+    inputFechaContrapropuesta.addEventListener('change', function() {
+      poblarFranjasParaFecha(inputFechaContrapropuesta.value);
+    });
+  }
+
   window.contraproponer = function(id) {
     if (!id) return;
     solicitudIdContrapropuesta = id;
-    
+
     var sol = todasLasSolicitudes.find(s => s.id === id);
-    var rawFecha = sol ? (sol.fecha_solicitada || sol.fecha_preferida || sol.fecha_servicio || sol.fecha) : null;
-    
-    selectFranja.innerHTML = '<option value="">-- Selecciona una hora disponible --</option>';
+    var rawFecha = sol ? (sol.fecha_solicitada || '') : '';
+    duracionContrapropuesta = (sol && sol.duracion_minutos_copia) ? Number(sol.duracion_minutos_copia) : 60;
 
-    if (rawFecha) {
-      var d = new Date(rawFecha + (rawFecha.includes('T') ? '' : 'T00:00:00'));
-      var diaJS = d.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
-      var mapaDiaBackend = (diaJS === 0) ? 6 : (diaJS - 1); // 0 = Lunes, ..., 6 = Domingo
-
-      var horarioDia = disponibilidadProveedor.find(h => Number(h.dia_semana) === mapaDiaBackend);
-
-      if (horarioDia) {
-        var iniH = parseInt(horarioDia.hora_inicio.split(':')[0], 10);
-        var finH = parseInt(horarioDia.hora_fin.split(':')[0], 10);
-
-        for (var h = iniH; h < finH; h++) {
-          var h24 = (h < 10 ? '0' + h : h) + ':00:00';
-          var opt = document.createElement('option');
-          opt.value = h24; // Formato 24h para backend
-          opt.textContent = formatearHoraLectura(h24); // Formato legible (AM/PM)
-          selectFranja.appendChild(opt);
-        }
-      }
-    }
-
-    // Si no hay horario cargado, ofrece las franjas base (08:00 a 17:00)
-    if (selectFranja.options.length <= 1) {
-      for (var h = 8; h <= 17; h++) {
-        var h24 = (h < 10 ? '0' + h : h) + ':00:00';
-        var opt = document.createElement('option');
-        opt.value = h24;
-        opt.textContent = formatearHoraLectura(h24);
-        selectFranja.appendChild(opt);
-      }
-    }
+    if (inputFechaContrapropuesta) inputFechaContrapropuesta.value = rawFecha;
+    if (inputComentarioContrapropuesta) inputComentarioContrapropuesta.value = '';
+    mostrarErrorEnModal(errModalContraproponer, '');
+    poblarFranjasParaFecha(rawFecha);
 
     modalContraproponer.style.display = 'flex';
   };
@@ -591,6 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (btnCancelarContrapropuesta) {
     btnCancelarContrapropuesta.addEventListener('click', function() {
       modalContraproponer.style.display = 'none';
+      mostrarErrorEnModal(errModalContraproponer, '');
       solicitudIdContrapropuesta = null;
     });
   }
@@ -599,76 +790,279 @@ document.addEventListener('DOMContentLoaded', function() {
     btnConfirmarContrapropuesta.addEventListener('click', function() {
       if (!solicitudIdContrapropuesta) return;
 
+      var fechaSugerida = inputFechaContrapropuesta ? inputFechaContrapropuesta.value : '';
       var horaValor24h = selectFranja.value;
+      var comentario = inputComentarioContrapropuesta ? inputComentarioContrapropuesta.value.trim() : '';
+
       if (!horaValor24h) {
-        alert('Por favor selecciona una hora propuesta de la lista.');
+        mostrarErrorEnModal(errModalContraproponer, 'Por favor selecciona una hora propuesta de la lista.');
         return;
       }
 
       var textoOriginal = btnConfirmarContrapropuesta.textContent;
       btnConfirmarContrapropuesta.textContent = 'Enviando...';
       btnConfirmarContrapropuesta.disabled = true;
+      mostrarErrorEnModal(errModalContraproponer, '');
 
-      window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitud, solicitudIdContrapropuesta), {
-        method: 'PATCH',
-        body: { 
-          hora_solicitada: horaValor24h, 
-          observaciones: "Cambio de hora solicitado por el proveedor" 
-        }
+      var payload = {
+        hora_sugerida: horaValor24h,
+        comentario_contrapropuesta: comentario
+      };
+      if (fechaSugerida) payload.fecha_sugerida = fechaSugerida;
+
+      window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitudContraproponer, solicitudIdContrapropuesta), {
+        method: 'POST',
+        body: payload
       }).then(function(res) {
         if (!res.ok) {
-          var detalle = (res.data && res.data.detail) ? res.data.detail : 'Inténtalo de nuevo.';
-          alert('No se pudo proponer la nueva hora: ' + detalle);
+          mostrarErrorEnModal(errModalContraproponer, extraerErrorApi(res.data, 'No se pudo enviar la contrapropuesta.'));
           return;
         }
         modalContraproponer.style.display = 'none';
-        if (typeof cargarDatosProveedor === 'function') {
-          cargarDatosProveedor();
-        }
+        solicitudIdContrapropuesta = null;
+        mostrarMensajePanel('Contrapropuesta enviada al cliente. Queda a la espera de su confirmación.', 'ok');
+        cargarDatosProveedor();
       }).catch(function() {
-        alert('Error de conexión al proponer la nueva hora.');
+        mostrarErrorEnModal(errModalContraproponer, 'Error de conexión al proponer el nuevo horario.');
       }).finally(function() {
         btnConfirmarContrapropuesta.textContent = textoOriginal;
         btnConfirmarContrapropuesta.disabled = false;
-        solicitudIdContrapropuesta = null;
       });
     });
   }
-  cargarCatalogoServicios();
+
+  // HU-15 (Rechazar) y HU-17 (Cancelar)
+  var modalMotivo = document.getElementById('modalMotivoProveedor');
+  var errModalMotivo = document.getElementById('errModalMotivoProveedor');
+  var tituloModalMotivo = document.getElementById('tituloModalMotivo');
+  var descModalMotivo = document.getElementById('descModalMotivo');
+  var inputMotivoProveedor = document.getElementById('inputMotivoProveedor');
+  var btnCancelarModalMotivo = document.getElementById('btnCancelarModalMotivo');
+  var btnConfirmarModalMotivo = document.getElementById('btnConfirmarModalMotivo');
+  var accionMotivoActual = null; // 'rechazar' | 'cancelar'
+  var solicitudIdMotivo = null;
+
+  window.abrirModalRechazo = function(id) {
+    solicitudIdMotivo = id;
+    accionMotivoActual = 'rechazar';
+    if (tituloModalMotivo) tituloModalMotivo.textContent = 'Rechazar solicitud';
+    if (descModalMotivo) descModalMotivo.textContent = 'Indica al cliente el motivo por el cual rechazas esta solicitud:';
+    if (btnConfirmarModalMotivo) btnConfirmarModalMotivo.textContent = 'Confirmar rechazo';
+    if (inputMotivoProveedor) inputMotivoProveedor.value = '';
+    mostrarErrorEnModal(errModalMotivo, '');
+    if (modalMotivo) modalMotivo.style.display = 'flex';
+  };
+
+  window.abrirModalCancelarProveedor = function(id) {
+    solicitudIdMotivo = id;
+    accionMotivoActual = 'cancelar';
+    if (tituloModalMotivo) tituloModalMotivo.textContent = 'Cancelar reserva / solicitud';
+    if (descModalMotivo) descModalMotivo.textContent = 'Indica el motivo de la cancelación. El horario quedará liberado:';
+    if (btnConfirmarModalMotivo) btnConfirmarModalMotivo.textContent = 'Confirmar cancelación';
+    if (inputMotivoProveedor) inputMotivoProveedor.value = '';
+    mostrarErrorEnModal(errModalMotivo, '');
+    if (modalMotivo) modalMotivo.style.display = 'flex';
+  };
+
+  if (btnCancelarModalMotivo) {
+    btnCancelarModalMotivo.addEventListener('click', function() {
+      if (modalMotivo) modalMotivo.style.display = 'none';
+      mostrarErrorEnModal(errModalMotivo, '');
+      solicitudIdMotivo = null;
+      accionMotivoActual = null;
+    });
+  }
+
+  if (btnConfirmarModalMotivo) {
+    btnConfirmarModalMotivo.addEventListener('click', function() {
+      if (!solicitudIdMotivo || !accionMotivoActual) return;
+      var motivo = inputMotivoProveedor ? inputMotivoProveedor.value.trim() : '';
+      if (!motivo) {
+        mostrarErrorEnModal(errModalMotivo, 'Debes escribir un motivo antes de confirmar.');
+        return;
+      }
+
+      var patron = accionMotivoActual === 'rechazar'
+        ? window.BEC.cfg.api.solicitudRechazar
+        : window.BEC.cfg.api.solicitudCancelar;
+      var accionEjecutada = accionMotivoActual;
+      var textoOriginal = btnConfirmarModalMotivo.textContent;
+      btnConfirmarModalMotivo.textContent = 'Procesando...';
+      btnConfirmarModalMotivo.disabled = true;
+      mostrarErrorEnModal(errModalMotivo, '');
+
+      window.BEC.api(window.BEC.url(patron, solicitudIdMotivo), {
+        method: 'POST',
+        body: { motivo: motivo }
+      }).then(function(res) {
+        if (!res.ok) {
+          mostrarErrorEnModal(errModalMotivo, extraerErrorApi(res.data, 'No se pudo completar la acción.'));
+          return;
+        }
+        if (modalMotivo) modalMotivo.style.display = 'none';
+        solicitudIdMotivo = null;
+        accionMotivoActual = null;
+        mostrarMensajePanel(
+          accionEjecutada === 'rechazar'
+            ? 'Solicitud rechazada correctamente.'
+            : 'Reserva cancelada correctamente. El espacio ha sido liberado.',
+          'ok'
+        );
+        cargarDatosProveedor();
+      }).catch(function() {
+        mostrarErrorEnModal(errModalMotivo, 'Error de conexión con el servidor.');
+      }).finally(function() {
+        btnConfirmarModalMotivo.textContent = textoOriginal;
+        btnConfirmarModalMotivo.disabled = false;
+      });
+    });
+  }
+
+  // HU-18: Finalizar servicio
+  var modalFinalizar = document.getElementById('modalFinalizarServicio');
+  var errModalFinalizar = document.getElementById('errModalFinalizarServicio');
+  var inputObsFinalizacion = document.getElementById('inputObsFinalizacion');
+  var btnCancelarFinalizar = document.getElementById('btnCancelarFinalizar');
+  var btnConfirmarFinalizar = document.getElementById('btnConfirmarFinalizar');
+  var solicitudIdFinalizar = null;
+
+  window.abrirModalFinalizar = function(id) {
+    solicitudIdFinalizar = id;
+    if (inputObsFinalizacion) inputObsFinalizacion.value = '';
+    mostrarErrorEnModal(errModalFinalizar, '');
+    if (modalFinalizar) modalFinalizar.style.display = 'flex';
+  };
+
+  if (btnCancelarFinalizar) {
+    btnCancelarFinalizar.addEventListener('click', function() {
+      if (modalFinalizar) modalFinalizar.style.display = 'none';
+      mostrarErrorEnModal(errModalFinalizar, '');
+      solicitudIdFinalizar = null;
+    });
+  }
+
+  if (btnConfirmarFinalizar) {
+    btnConfirmarFinalizar.addEventListener('click', function() {
+      if (!solicitudIdFinalizar) return;
+      var obs = inputObsFinalizacion ? inputObsFinalizacion.value.trim() : '';
+      var textoOriginal = btnConfirmarFinalizar.textContent;
+      btnConfirmarFinalizar.textContent = 'Finalizando...';
+      btnConfirmarFinalizar.disabled = true;
+      mostrarErrorEnModal(errModalFinalizar, '');
+
+      window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitudFinalizar, solicitudIdFinalizar), {
+        method: 'POST',
+        body: { observaciones_finalizacion: obs }
+      }).then(function(res) {
+        if (!res.ok) {
+          mostrarErrorEnModal(errModalFinalizar, extraerErrorApi(res.data, 'No se pudo finalizar el servicio.'));
+          return;
+        }
+        if (modalFinalizar) modalFinalizar.style.display = 'none';
+        solicitudIdFinalizar = null;
+        mostrarMensajePanel('¡Servicio marcado como completado exitosamente!', 'ok');
+        cargarDatosProveedor();
+      }).catch(function() {
+        mostrarErrorEnModal(errModalFinalizar, 'Error de conexión al finalizar el servicio.');
+      }).finally(function() {
+        btnConfirmarFinalizar.textContent = textoOriginal;
+        btnConfirmarFinalizar.disabled = false;
+      });
+    });
+  }
+
+  window.BEC.requiereSesion(['PROVEEDOR']).then(function(perfil) {
+    if (!perfil) {
+      mostrarMensajePanel('Solo las cuentas de tipo Proveedor pueden acceder a este panel.', 'error');
+      const cp = document.getElementById('contenedorPorResponder');
+      const cr = document.getElementById('contenedorRespondidas');
+      if (cp) cp.innerHTML = '<div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 2rem; text-align: center; color: #64748b;">Inicia sesión con una cuenta de proveedor para gestionar solicitudes.</div>';
+      if (cr) cr.innerHTML = '';
+      return;
+    }
+    cargarHorarioPanel();
+    cargarCatalogoServicios();
+  });
 });
 </script>
 
-<!-- Modal Contraproponer Horario -->
+<!-- Modal Contraproponer Horario (HU-15) -->
 <div id="modalContraproponer" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
-  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 24rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: center; border: 1px solid #e2e8f0;">
-    
-    <div style="width: 3rem; height: 3rem; background-color: #eff6ff; color: #3b82f6; border-radius: 9999px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;">
-      <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: left; border: 1px solid #e2e8f0;">
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Proponer nuevo horario</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1rem 0; line-height: 1.4;">
+      Elige una fecha y franja disponible para enviar tu contrapropuesta al cliente:
+    </p>
+    <div id="errModalContraproponer" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+
+    <div style="margin-bottom: 1rem;">
+      <label for="inputFechaContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Fecha propuesta</label>
+      <input type="date" id="inputFechaContrapropuesta" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; outline: none;">
     </div>
 
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">Proponer nuevo horario</h3>
-    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1.25rem 0; line-height: 1.4;">
-      Selecciona una de tus horas de atención disponibles para este día:
-    </p>
-
-    <!-- Selector dinámico de franjas horarias -->
-    <div style="margin-bottom: 1.5rem;">
-      <select id="selectFranjaHoraria" style="width: 100%; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.95rem; font-weight: 600; color: #0f172a; outline: none; cursor: pointer;">
+    <div style="margin-bottom: 1rem;">
+      <label for="selectFranjaHoraria" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Hora propuesta *</label>
+      <select id="selectFranjaHoraria" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; font-weight: 600; color: #0f172a; outline: none; cursor: pointer;">
         <option value="">-- Selecciona una hora disponible --</option>
       </select>
     </div>
 
+    <div style="margin-bottom: 1.5rem;">
+      <label for="inputComentarioContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Comentario para el cliente (opcional)</label>
+      <textarea id="inputComentarioContrapropuesta" rows="2" placeholder="Ej: A esa hora tengo otro servicio, pero puedo atenderte en esta franja." style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.88rem; color: #0f172a; resize: vertical; outline: none;"></textarea>
+    </div>
+
     <div style="display: flex; gap: 0.75rem;">
-      <button type="button" id="btnCancelarContrapropuesta" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+      <button type="button" id="btnCancelarContrapropuesta" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
         Cancelar
       </button>
-      <button type="button" id="btnConfirmarContrapropuesta" style="flex: 1; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+      <button type="button" id="btnConfirmarContrapropuesta" style="flex: 1; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Enviar contrapropuesta
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rechazar / Cancelar con Motivo (HU-15 & HU-17) -->
+<div id="modalMotivoProveedor" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
+    <h3 id="tituloModalMotivo" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Motivo</h3>
+    <p id="descModalMotivo" style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.75rem 0; line-height: 1.4;"></p>
+    <div id="errModalMotivoProveedor" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+
+    <textarea id="inputMotivoProveedor" rows="3" placeholder="Escribe el motivo aquí..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarModalMotivo" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Volver
+      </button>
+      <button type="button" id="btnConfirmarModalMotivo" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
         Confirmar
       </button>
     </div>
+  </div>
+</div>
 
+<!-- Modal Finalizar Servicio (HU-18) -->
+<div id="modalFinalizarServicio" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Finalizar servicio</h3>
+    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.75rem 0; line-height: 1.4;">
+      ¿Confirmas que el servicio fue prestado satisfactoriamente? Esta acción marcará la reserva como <strong>Completada</strong>.
+    </p>
+    <div id="errModalFinalizarServicio" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+
+    <label for="inputObsFinalizacion" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Observaciones de cierre (opcional)</label>
+    <textarea id="inputObsFinalizacion" rows="3" placeholder="Ej: Servicio realizado sin novedades." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarFinalizar" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Volver
+      </button>
+      <button type="button" id="btnConfirmarFinalizar" style="flex: 1; background-color: #0d9488; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Marcar completada
+      </button>
+    </div>
   </div>
 </div>
 {% endblock %}

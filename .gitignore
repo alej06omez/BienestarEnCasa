@@ -1,13 +1,25 @@
-# Entorno virtual y secretos locales
+# Entornos virtuales y secretos locales
 env/
+venv/
+.venv/
 .env
+Backend/.env
+
+# Bases de datos locales y archivos multimedia subidos
+*.sqlite3
+db.sqlite3
 media/
-
-
+Backend/media/
 
 # Archivos generados por Python y Django
 __pycache__/
 *.py[cod]
-*.sqlite3
-media/
+*$py.class
 staticfiles/
+*.log
+
+# Editores y sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

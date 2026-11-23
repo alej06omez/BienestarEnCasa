@@ -17,14 +17,23 @@
             registro : '/api/auth/registro/',
             solicitudes: '/api/solicitudes/',
             solicitud: '/api/solicitudes/{id}/',
+            solicitudAceptar: '/api/solicitudes/{id}/aceptar/',
+            solicitudRechazar: '/api/solicitudes/{id}/rechazar/',
+            solicitudContraproponer: '/api/solicitudes/{id}/contraproponer/',
+            solicitudAceptarContrapropuesta: '/api/solicitudes/{id}/aceptar-contrapropuesta/',
+            solicitudRechazarContrapropuesta: '/api/solicitudes/{id}/rechazar-contrapropuesta/',
+            solicitudCancelar: '/api/solicitudes/{id}/cancelar/',
+            solicitudFinalizar: '/api/solicitudes/{id}/finalizar/',
             multimedia: '/api/catalogo/multimedia/',
             multimediaItem: '/api/catalogo/multimedia/{id}/',
             elementos: '/api/catalogo/elementos/',
             elemento: '/api/catalogo/elementos/{id}/',
             direcciones: '/api/usuarios/direcciones/',
             direccion: '/api/usuarios/direcciones/{id}/',
-            // TODO: confirmar esta ruta contra urls.py (RenovarTokenView).
-            // Sigue el mismo patrón kebab-case que el resto ('iniciar-sesion', 'registro').
+            zonas: '/api/proveedores/mis-zonas/',
+            zona: '/api/proveedores/mis-zonas/{id}/',
+            disponibilidad: '/api/proveedores/disponibilidad/',
+            cerrarSesion: '/api/auth/cerrar-sesion/',
             renovarToken: '/api/auth/renovar-token/'
         },
         pages: {
@@ -79,6 +88,68 @@
     };
     window.BEC.hora = function(valor) {
         return String(valor || '').slice(0, 5);
+    };
+
+    window.BEC.escaparHtml = function(valor) {
+        if (valor === null || valor === undefined) return '';
+        var div = document.createElement('div');
+        div.textContent = String(valor);
+        return div.innerHTML;
+    };
+
+    window.BEC.extraerError = function(data, respaldo) {
+        var def = respaldo || 'No se pudo completar la operación. Inténtalo de nuevo.';
+        if (!data) return def;
+        if (typeof data === 'string') return data;
+        if (data.detail) return String(data.detail);
+        if (data.error) return String(data.error);
+        if (data.mensaje) return String(data.mensaje);
+        if (typeof data === 'object') {
+            var partes = [];
+            Object.keys(data).forEach(function(k) {
+                var v = data[k];
+                if (Array.isArray(v)) partes.push(v.join(' '));
+                else if (typeof v === 'string') partes.push(v);
+                else if (v && typeof v === 'object') partes.push(window.BEC.extraerError(v, ''));
+            });
+            var filtrado = partes.filter(Boolean);
+            if (filtrado.length) return filtrado.join(' ');
+        }
+        return def;
+    };
+
+    window.BEC.mensaje = function(texto, tipo, contenedor) {
+        var box = typeof contenedor === 'string'
+            ? document.querySelector(contenedor)
+            : (contenedor || document.getElementById('mensajes'));
+        if (!box) return;
+        if (!texto) {
+            box.replaceChildren();
+            return;
+        }
+        var esError = tipo === 'error';
+        var div = document.createElement('div');
+        div.setAttribute('role', esError ? 'alert' : 'status');
+        div.style.cssText = 'padding: 0.85rem 1.1rem; border-radius: 0.75rem; font-weight: 600; font-size: 0.9rem; margin-bottom: 1rem; ' + (
+            esError
+                ? 'background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca;'
+                : 'background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;'
+        );
+        div.textContent = String(texto);
+        box.replaceChildren(div);
+    };
+
+    window.BEC.mensajeError = function(res, contenedor) {
+        var texto = window.BEC.extraerError(res && res.data, 'Ocurrió un error al procesar la solicitud.');
+        window.BEC.mensaje(texto, 'error', contenedor);
+    };
+
+    window.BEC.ocupado = function(form, cargando) {
+        if (!form) return;
+        var botones = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+        botones.forEach(function(btn) {
+            btn.disabled = Boolean(cargando);
+        });
     };
 
     window.BEC.requiereSesion = async function(rolesPermitidos) {
@@ -236,13 +307,17 @@
         }
     };
 
-    // Cierre de sesión: limpia el estado local. La cookie httpOnly
-    // la invalida el backend si llamas antes a CerrarSesionView;
-    // aquí solo se limpia lo que el frontend puede ver/borrar.
+    // Cierre de sesión: invalida tokens y cookies httpOnly en el backend y limpia estado local.
     window.BEC.cerrarSesion = function() {
-        localStorage.removeItem('bec_perfil');
-        localStorage.removeItem('bec_foto_perfil');
-        window.location.href = "{% url 'pagina-inicio' %}";
+        var limpiarYRedirigir = function() {
+            localStorage.removeItem('bec_perfil');
+            localStorage.removeItem('bec_foto_perfil');
+            window.location.href = "{% url 'pagina-inicio' %}";
+        };
+        window.BEC.api(window.BEC.cfg.api.cerrarSesion, {
+            method: 'POST',
+            redirectOn401: false
+        }).then(limpiarYRedirigir).catch(limpiarYRedirigir);
     };
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -281,11 +356,19 @@
                     vistaLogin.style.display = 'block';
                 }
             }
+            if (e.target && e.target.closest && e.target.closest('#btnMenuMobile')) {
+                var navList = document.querySelector('.main-nav .nav-list');
+                if (navList) {
+                    navList.classList.toggle('mostrar-menu');
+                }
+            }
             if (e.target && e.target.id === 'btn-cerrar-sesion') {
+                e.preventDefault();
                 window.BEC.cerrarSesion();
             }
         });
 
+        var formLoginModal = document.getElementById('loginFormModal');
         var btnSubmit = document.getElementById('btnSubmitLogin');
 
         var formRegistroModal = document.getElementById('registroFormModal');
@@ -329,34 +412,36 @@
                     }
 
                     if (res && res.ok) {
-                        // Guardar datos en local y redirigir
-                        if (res.data) {
-                            try { localStorage.setItem('bec_perfil', JSON.stringify(res.data)); } catch (e) {}
-                        }
-
-                        if (msgBoxReg) {
-                            msgBoxReg.innerHTML = '<div style="color:#16a34a;font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;">¡Cuenta creada exitosamente!</div>';
-                        }
-
-                        // Definir la redirección según el rol
                         var rolGuardado = (res.data && res.data.rol) ? res.data.rol.toUpperCase() : '';
                         var destino = (rolGuardado === 'PROVEEDOR' || rolGuardado === 'PRO')
                             ? "{% url 'pagina-panel-proveedor' %}"
-                            : "{% url 'mi-perfil' %}";
+                            : "{% url 'pagina-perfil' %}";
 
-                        //  Esperar 1.5 segundos antes de redirigir para que el mensaje sea visible
-                        setTimeout(function() {
-                            window.location.href = destino;
-                        }, 1500);
+                        if (msgBoxReg) {
+                            msgBoxReg.innerHTML = '<div style="color:#16a34a;font-weight:700;font-size:0.85rem;margin-bottom:0.5rem;">¡Cuenta creada exitosamente! Iniciando sesión...</div>';
+                        }
+
+                        // Iniciar sesión automáticamente para establecer las cookies JWT antes de redirigir
+                        window.BEC.api(window.BEC.cfg.api.login, {
+                            method: 'POST',
+                            body: { email: datos.email, password: datos.password },
+                            redirectOn401: false
+                        }).then(function(loginRes) {
+                            if (loginRes && loginRes.ok) {
+                                var usuario = loginRes.data.perfil || loginRes.data.usuario || loginRes.data.user || loginRes.data;
+                                try { localStorage.setItem('bec_perfil', JSON.stringify(usuario)); } catch (e) {}
+                                window.location.href = destino;
+                            } else {
+                                window.location.href = "{% url 'pagina-login' %}";
+                            }
+                        }).catch(function() {
+                            window.location.href = "{% url 'pagina-login' %}";
+                        });
 
                     } else {
                         // Manejar errores de validación de Django
-                        var errMsj = 'Error al registrar: Revisa los datos.';
-                        if (res.data) {
-                            errMsj = res.data.email || res.data.detail || res.data.non_field_errors || errMsj;
-                            if (Array.isArray(errMsj)) errMsj = errMsj[0];
-                        }
-                        if (msgBoxReg) msgBoxReg.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">' + errMsj + '</div>';
+                        var errMsj = window.BEC.extraerError(res && res.data, 'Error al registrar: Revisa los datos.');
+                        if (msgBoxReg) msgBoxReg.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">' + window.BEC.escaparHtml(errMsj) + '</div>';
                     }
                 }).catch(function() {
                     if (btnSubmitReg) {
@@ -368,57 +453,66 @@
             });
         }
 
-        if (btnSubmit) {
-            btnSubmit.addEventListener('click', function() {
-                var emailInput = document.getElementById('emailModal');
-                var passInput = document.getElementById('passwordModal');
-                var msgBox = document.getElementById('mensajesModal');
+        function ejecutarLoginModal(e) {
+            if (e) e.preventDefault();
+            var emailInput = document.getElementById('emailModal');
+            var passInput = document.getElementById('passwordModal');
+            var msgBox = document.getElementById('mensajesModal');
 
-                var email = emailInput ? emailInput.value.trim() : '';
-                var password = passInput ? passInput.value.trim() : '';
+            var email = emailInput ? emailInput.value.trim() : '';
+            var password = passInput ? passInput.value : '';
 
-                if (!email || !password) {
-                    if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">Ingresa correo y contraseña.</div>';
-                    return;
-                }
+            if (!email || !password) {
+                if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">Ingresa correo y contraseña.</div>';
+                return;
+            }
 
+            if (btnSubmit) {
                 btnSubmit.disabled = true;
                 btnSubmit.textContent = 'Autenticando...';
+            }
 
-                // redirectOn401: false -> un 401 aquí es "credenciales inválidas",
-                // no una sesión caída, así que lo mostramos en el modal en vez
-                // de dejar que el interceptor global redirija a '/'.
-                window.BEC.api(window.BEC.cfg.api.login, {
-                    method: 'POST',
-                    body: { email: email, password: password },
-                    redirectOn401: false
-                }).then(function(res) {
-                    if (res.ok) {
-                        var usuario = res.data.perfil || res.data.usuario || res.data.user || res.data;
-                        if (res.data.access) usuario.access = res.data.access;
+            // redirectOn401: false -> un 401 aquí es "credenciales inválidas",
+            // no una sesión caída, así que lo mostramos en el modal en vez
+            // de dejar que el interceptor global redirija a '/'.
+            window.BEC.api(window.BEC.cfg.api.login, {
+                method: 'POST',
+                body: { email: email, password: password },
+                redirectOn401: false
+            }).then(function(res) {
+                if (res.ok) {
+                    var usuario = res.data.perfil || res.data.usuario || res.data.user || res.data;
+                    if (res.data.access) usuario.access = res.data.access;
 
-                        localStorage.setItem('bec_perfil', JSON.stringify(usuario));
-                        var rol = (usuario && usuario.rol) ? usuario.rol.toUpperCase() : '';
+                    localStorage.setItem('bec_perfil', JSON.stringify(usuario));
+                    var rol = (usuario && usuario.rol) ? usuario.rol.toUpperCase() : '';
 
-                        if (rol === 'PROVEEDOR' || rol === 'PRO') {
-                            window.location.href = urlPanelProveedor;
-                        } else {
-                            window.location.href = urlPanelCliente;
-                        }
+                    if (rol === 'PROVEEDOR' || rol === 'PRO') {
+                        window.location.href = urlPanelProveedor;
                     } else {
+                        window.location.href = urlPanelCliente;
+                    }
+                } else {
+                    if (btnSubmit) {
                         btnSubmit.disabled = false;
                         btnSubmit.textContent = 'Iniciar sesión';
-                        var errMsj = (res.data && (res.data.detail || res.data.error || res.data.non_field_errors || res.data.mensaje))
-                            ? (res.data.detail || res.data.error || res.data.non_field_errors || res.data.mensaje)
-                            : 'Correo o contraseña incorrectos.';
-                        if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">' + errMsj + '</div>';
                     }
-                }).catch(function() {
+                    var errMsj = window.BEC.extraerError(res && res.data, 'Correo o contraseña incorrectos.');
+                    if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">' + window.BEC.escaparHtml(errMsj) + '</div>';
+                }
+            }).catch(function() {
+                if (btnSubmit) {
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = 'Iniciar sesión';
-                    if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">Error al conectar con el servidor.</div>';
-                });
+                }
+                if (msgBox) msgBox.innerHTML = '<div style="color: #ef4444; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.5rem;">Error al conectar con el servidor.</div>';
             });
+        }
+
+        if (formLoginModal) {
+            formLoginModal.addEventListener('submit', ejecutarLoginModal);
+        } else if (btnSubmit) {
+            btnSubmit.addEventListener('click', ejecutarLoginModal);
         }
 
         try {

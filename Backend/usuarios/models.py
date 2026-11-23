@@ -40,7 +40,7 @@ class Direccion(models.Model):
         verbose_name_plural = 'direcciones'
 
     def __str__(self):
-        return f'{self.direccion}, {self.barrio_sector} - {self.ciudad}'
+        return f'{self.direccion}, {self.barrio} - {self.ciudad}'
 
 class PerfilProveedor(models.Model):
     perfil_usuario = models.OneToOneField(

@@ -10,24 +10,27 @@
 {% block body %}
 <div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2.5rem 1rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
   <div style="max-width: 68rem; margin: 0 auto;">
-    
+
     <!-- Encabezado -->
-    <div style="margin-bottom: 2rem;">
+    <div style="margin-bottom: 1.5rem;">
       <h1 style="font-size: 2.25rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">
         Mis solicitudes
       </h1>
       <p style="color: #64748b; font-size: 1rem; margin: 0;">
-        Aquí podrás encontrar las solicitudes que has hecho y el estado en el que se encuentran.
+        Aquí podrás consultar tus solicitudes y reservas, responder contrapropuestas de horario y gestionar cancelaciones.
       </p>
     </div>
 
-    <!-- Buscador y Filtro -->
+    <!-- Mensajes de retroalimentación Sprint 3 -->
+    <div id="msjMisSolicitudes" aria-live="polite" style="margin-bottom: 1.25rem;"></div>
+
+    <!-- Buscador y Filtros -->
     <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-      
+
       <!-- Campo de Búsqueda -->
-      <div style="flex: 1; min-width: 260px; position: relative;">
-        <input 
-          type="text" 
+      <div style="flex: 1; min-width: 240px; position: relative;">
+        <input
+          type="text"
           id="inputBuscar"
           placeholder="Buscar por servicio o profesional..."
           style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem 0.75rem 2.5rem; border-radius: 0.75rem; border: 1px solid #f1f5f9; background-color: #f8fafc; font-size: 0.95rem; color: #0f172a; outline: none;"
@@ -35,6 +38,18 @@
         <svg style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 1.125rem; height: 1.125rem; color: #94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
         </svg>
+      </div>
+
+      <!-- Filtro Estado -->
+      <div style="position: relative; min-width: 200px;">
+        <select id="selectEstado" style="width: 100%; box-sizing: border-box; padding: 0.75rem 1rem; border-radius: 0.75rem; border: 1px solid #f1f5f9; background-color: #f8fafc; font-size: 0.95rem; color: #0f172a; outline: none; cursor: pointer;">
+          <option value="">Todos los estados</option>
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="SUGERIDA">Contrapropuesta recibida</option>
+          <option value="ACEPTADA">Aceptada</option>
+          <option value="COMPLETADA">Completada</option>
+          <option value="CANCELADA">Cancelada / Rechazada</option>
+        </select>
       </div>
 
       <!-- Filtro Categorías -->
@@ -63,12 +78,12 @@
       </div>
       <div>
         <h3 style="font-size: 1.125rem; font-weight: 700; color: #1e3a8a; margin: 0 0 0.75rem 0;">
-          Sobre tus servicios
+          Sobre tus servicios y reservas
         </h3>
         <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; color: #1e40af; font-size: 0.9rem;">
-          <li>• Revisa el estado de cada servicio solicitado en tiempo real.</li>
-          <li>• Puedes descargar el comprobante de pago una vez finalizado el servicio.</li>
-          <li>• Para cambios en la fecha u hora, comunícate con tu profesional asignado.</li>
+          <li>• Revisa el estado de cada solicitud o reserva en tiempo real.</li>
+          <li>• Si el proveedor te envía una contrapropuesta de horario, puedes aceptarla o rechazarla directamente aquí.</li>
+          <li>• Puedes cancelar solicitudes pendientes, sugeridas o reservas aceptadas indicando el motivo.</li>
         </ul>
       </div>
     </div>
@@ -76,48 +91,139 @@
   </div>
 </div>
 
+<!-- Modal Rechazar Contrapropuesta (HU-16) / Cancelar Solicitud o Reserva (HU-17) -->
+<div id="modalAccionCliente" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
+    <h3 id="tituloModalCliente" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Confirmar acción</h3>
+    <p id="descModalCliente" style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.9rem 0; line-height: 1.4;"></p>
+
+    <div id="errModalCliente" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+
+    <textarea id="inputMotivoCliente" rows="3" placeholder="Escribe el motivo aquí..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <button type="button" id="btnCancelarModalCliente" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Volver
+      </button>
+      <button type="button" id="btnConfirmarModalCliente" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const contenedor = document.getElementById('contenedorSolicitudes');
   const inputBuscar = document.getElementById('inputBuscar');
+  const selectEstado = document.getElementById('selectEstado');
   const selectCategoria = document.getElementById('selectCategoria');
-  const btnLogout = document.getElementById('btn-cerrar-sesion');
-  
-  let todasLasSolicitudes = [];
-  let mapaServicios = {}; // id -> { nombre, categoria }
-  let mapaCategorias = {}; // id -> nombre
+  const msjBox = document.getElementById('msjMisSolicitudes');
 
-  if (btnLogout && window.BEC && window.BEC.cerrarSesion) {
-    btnLogout.addEventListener('click', function() {
-      window.BEC.cerrarSesion();
-    });
+  const modalAccion = document.getElementById('modalAccionCliente');
+  const tituloModal = document.getElementById('tituloModalCliente');
+  const descModal = document.getElementById('descModalCliente');
+  const errModal = document.getElementById('errModalCliente');
+  const inputMotivo = document.getElementById('inputMotivoCliente');
+  const btnCancelarModal = document.getElementById('btnCancelarModalCliente');
+  const btnConfirmarModal = document.getElementById('btnConfirmarModalCliente');
+
+  let todasLasSolicitudes = [];
+  let mapaServicios = {};
+  let mapaCategorias = {};
+  let accionActual = null; // 'cancelar' | 'rechazar-contrapropuesta'
+  let solicitudIdActual = null;
+
+  function escaparHtml(valor) {
+    if (valor === null || valor === undefined) return '';
+    var div = document.createElement('div');
+    div.textContent = String(valor);
+    return div.innerHTML;
   }
 
-  // Cargar categorías y servicios para mapear los IDs con los nombres reales
+  function extraerErrorApi(data, respaldo) {
+    if (!data) return respaldo;
+    if (typeof data === 'string') return data;
+    if (data.detail) return String(data.detail);
+    var partes = [];
+    Object.keys(data).forEach(function(k) {
+      var v = data[k];
+      if (Array.isArray(v)) partes.push(v.join(' '));
+      else if (typeof v === 'string') partes.push(v);
+    });
+    return partes.length ? partes.join(' ') : respaldo;
+  }
+
+  function mostrarMensaje(texto, tipo) {
+    if (!msjBox) return;
+    var esError = tipo === 'error';
+    msjBox.innerHTML = '<div style="background-color:' + (esError ? '#fef2f2' : '#f0fdf4') + '; color:' + (esError ? '#991b1b' : '#166534') + '; border:1px solid ' + (esError ? '#fecaca' : '#bbf7d0') + '; padding: 0.9rem 1.25rem; border-radius: 0.85rem; font-weight: 600; font-size: 0.9rem;">' + escaparHtml(texto) + '</div>';
+    msjBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function formatearFecha(rawFecha) {
+    if (!rawFecha) return 'Fecha por confirmar';
+    try {
+      const d = new Date(rawFecha + (String(rawFecha).includes('T') ? '' : 'T00:00:00'));
+      if (isNaN(d.getTime())) return rawFecha;
+      return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch(e) {
+      return rawFecha;
+    }
+  }
+
+  function formatearFechaHora(raw) {
+    if (!raw) return '';
+    try {
+      const d = new Date(raw);
+      if (isNaN(d.getTime())) return raw;
+      return d.toLocaleString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch(e) {
+      return raw;
+    }
+  }
+
+  function formatearHora12(rawHora) {
+    if (!rawHora) return '';
+    var partes = String(rawHora).split(':');
+    var h = parseInt(partes[0], 10);
+    var m = partes[1] || '00';
+    if (isNaN(h)) return rawHora;
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12 || 12;
+    return String(h12).padStart(2, '0') + ':' + String(m).slice(0, 2) + ' ' + ampm;
+  }
+
+  function calcularHoraFin(rawHora, duracionMinutos) {
+    if (!rawHora) return '';
+    var partes = String(rawHora).split(':');
+    var h = parseInt(partes[0], 10);
+    var m = parseInt(partes[1] || '0', 10);
+    if (isNaN(h) || isNaN(m)) return '';
+    var total = (h * 60 + m + (parseInt(duracionMinutos, 10) || 60)) % (24 * 60);
+    var hf = Math.floor(total / 60);
+    var mf = total % 60;
+    return formatearHora12(String(hf).padStart(2, '0') + ':' + String(mf).padStart(2, '0'));
+  }
+
   function cargarCatalogoYSolicitudes() {
     var urlServicios = (window.BEC && window.BEC.cfg && window.BEC.cfg.api && window.BEC.cfg.api.servicios) ? window.BEC.cfg.api.servicios : '/api/catalogo/servicios/';
     var urlCategorias = '/api/catalogo/categorias/';
 
-    // CAMBIO 1: Usar window.BEC.api en el Promise.all
-    // Nota: Como BEC.api ya extrae el JSON, solo leemos r.data
     Promise.all([
       window.BEC.api(urlCategorias).then(r => (r && r.ok) ? r.data : []).catch(() => []),
       window.BEC.api(urlServicios).then(r => (r && r.ok) ? r.data : []).catch(() => [])
     ]).then(function(respuestas) {
-      // 1. Mapear Categorías
       var listaCats = Array.isArray(respuestas[0]) ? respuestas[0] : (respuestas[0].results || []);
       if (selectCategoria && listaCats.length > 0) {
-        selectCategoria.innerHTML = '<option value="">Todas las categorías</option>' + 
-          listaCats.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+        selectCategoria.innerHTML = '<option value="">Todas las categorías</option>' +
+          listaCats.map(c => `<option value="${escaparHtml(c.nombre)}">${escaparHtml(c.nombre)}</option>`).join('');
       }
-      listaCats.forEach(c => {
-        mapaCategorias[c.id] = c.nombre;
-      });
+      listaCats.forEach(c => { mapaCategorias[c.id] = c.nombre; });
 
-      // 2. Mapear Servicios
       var dataServicios = respuestas[1];
       var listaServicios = window.BEC && window.BEC.lista ? window.BEC.lista(dataServicios) : (Array.isArray(dataServicios) ? dataServicios : (dataServicios.results || []));
-      
+
       listaServicios.forEach(function(s) {
         var nombreCat = 'Categoría General';
         if (s.categoria_detalle && s.categoria_detalle.nombre) {
@@ -136,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
       });
 
-      // 3. Cargar solicitudes reales
       cargarSolicitudesReales();
     }).catch(function() {
       cargarSolicitudesReales();
@@ -145,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function obtenerNombreServicio(sol) {
     if (!sol) return 'Servicio de Bienestar';
-
+    if (sol.nombre_servicio_copia) return sol.nombre_servicio_copia;
     if (sol.servicio_nombre) return sol.servicio_nombre;
     if (sol.nombre_servicio) return sol.nombre_servicio;
     if (sol.servicio && typeof sol.servicio === 'object') {
@@ -153,44 +258,31 @@ document.addEventListener('DOMContentLoaded', function() {
       if (sol.servicio.titulo) return sol.servicio.titulo;
     }
     if (typeof sol.servicio === 'string' && isNaN(sol.servicio)) return sol.servicio;
-
-    if (sol.servicio && mapaServicios[sol.servicio]) {
-      return mapaServicios[sol.servicio].nombre;
-    }
-
+    if (sol.servicio && mapaServicios[sol.servicio]) return mapaServicios[sol.servicio].nombre;
     return 'Servicio de Bienestar';
   }
 
   function obtenerCategoria(sol) {
     if (!sol) return 'Categoría General';
-
-    // 1. Si viene especificado en la solicitud
     if (sol.categoria_nombre) return sol.categoria_nombre;
     if (sol.servicio && typeof sol.servicio === 'object') {
       if (sol.servicio.categoria_detalle && sol.servicio.categoria_detalle.nombre) return sol.servicio.categoria_detalle.nombre;
       if (typeof sol.servicio.categoria === 'object' && sol.servicio.categoria.nombre) return sol.servicio.categoria.nombre;
       if (typeof sol.servicio.categoria === 'string') return sol.servicio.categoria;
     }
-
-    // 2. Buscar en el mapa de servicios por ID
     var servId = sol.servicio && typeof sol.servicio === 'object' ? sol.servicio.id : sol.servicio;
-    if (servId && mapaServicios[servId]) {
-      return mapaServicios[servId].categoria;
-    }
+    if (servId && mapaServicios[servId]) return mapaServicios[servId].categoria;
 
-    // 3. Mapeo de respaldo por nombres conocidos
     var servNombre = obtenerNombreServicio(sol).toLowerCase();
     if (servNombre.includes('corte') || servNombre.includes('pelo') || servNombre.includes('cabello') || servNombre.includes('barba')) return 'Peluquería';
     if (servNombre.includes('masaje') || servNombre.includes('espalda')) return 'Masajes no Médicos';
     if (servNombre.includes('manicure') || servNombre.includes('pedicure') || servNombre.includes('uña')) return 'Manicure y pedicure';
     if (servNombre.includes('spa') || servNombre.includes('terapia')) return 'Terapias corporales y spa';
-
     return 'Categoría General';
   }
 
   function obtenerNombreProveedor(sol) {
     if (!sol) return 'Por asignar';
-
     if (sol.proveedor_nombre) return sol.proveedor_nombre;
     if (sol.nombre_proveedor) return sol.nombre_proveedor;
     if (sol.proveedor && typeof sol.proveedor === 'object') {
@@ -203,17 +295,22 @@ document.addEventListener('DOMContentLoaded', function() {
     return 'Por asignar';
   }
 
-  function obtenerFechaServicio(sol) {
-    const rawFecha = sol.fecha_solicitada || sol.fecha_preferida || sol.fecha_servicio || sol.fecha || sol.creado_en;
-    if (!rawFecha) return 'Fecha por confirmar';
-
-    try {
-      const d = new Date(rawFecha + (rawFecha.includes('T') ? '' : 'T00:00:00'));
-      if (isNaN(d.getTime())) return rawFecha;
-      return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
-    } catch(e) {
-      return rawFecha;
+  function badgeEstadoCliente(sol) {
+    const estado = (sol.estado || 'PENDIENTE').toUpperCase();
+    if (estado === 'SUGERIDA') {
+      return '<span style="background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">⏳ Contrapropuesta recibida</span>';
     }
+    if (estado === 'ACEPTADA') {
+      return '<span style="background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✓ Aceptada</span>';
+    }
+    if (estado === 'COMPLETADA') {
+      return '<span style="background-color: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✔ Completada</span>';
+    }
+    if (estado === 'CANCELADA') {
+      const etiqueta = sol.cancelado_por === 'PROVEEDOR' ? 'Cancelada / Rechazada por proveedor' : 'Cancelada';
+      return '<span style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✕ ' + etiqueta + '</span>';
+    }
+    return '<span style="background-color: #fef9c3; color: #854d0e; border: 1px solid #fde68a; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">Pendiente</span>';
   }
 
   function renderizarSolicitudes(lista) {
@@ -221,56 +318,98 @@ document.addEventListener('DOMContentLoaded', function() {
       contenedor.innerHTML = `
         <div style="text-align: center; padding: 3rem; background: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; color: #64748b;">
           <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #0f172a;">No tienes solicitudes registradas</p>
-          <p style="font-size: 0.9rem; margin: 0;">Crea una nueva solicitud desde el catálogo.</p>
+          <p style="font-size: 0.9rem; margin: 0;">Crea una nueva solicitud desde el catálogo o ajusta los filtros de búsqueda.</p>
         </div>
       `;
       return;
     }
 
     contenedor.innerHTML = lista.map(sol => {
-      const servicioNombre = obtenerNombreServicio(sol);
-      const categoria = obtenerCategoria(sol);
-      const fecha = obtenerFechaServicio(sol);
-      const proveedor = obtenerNombreProveedor(sol);
+      const servicioNombre = escaparHtml(obtenerNombreServicio(sol));
+      const categoria = escaparHtml(obtenerCategoria(sol));
+      const fecha = escaparHtml(formatearFecha(sol.fecha_solicitada || sol.creado_en));
+      const horaIni = escaparHtml(formatearHora12(sol.hora_solicitada));
+      const duracion = sol.duracion_minutos_copia || 60;
+      const horaFin = escaparHtml(calcularHoraFin(sol.hora_solicitada, duracion));
+      const proveedor = escaparHtml(obtenerNombreProveedor(sol));
       const estado = (sol.estado || 'PENDIENTE').toUpperCase();
-
-      const esRealizado = estado === 'REALIZADO' || estado === 'COMPLETADO' || estado === 'FINALIZADO';
       const urlDetalle = '/mis-solicitudes/' + sol.id + '/';
 
+      let bloqueEstadoExtra = '';
+      if (estado === 'SUGERIDA' && sol.hora_sugerida) {
+        const fechaSug = escaparHtml(formatearFecha(sol.fecha_sugerida || sol.fecha_solicitada));
+        const horaSugIni = escaparHtml(formatearHora12(sol.hora_sugerida));
+        const horaSugFin = escaparHtml(calcularHoraFin(sol.hora_sugerida, duracion));
+        bloqueEstadoExtra = `
+          <div style="margin-top: 0.9rem; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.85rem; padding: 0.9rem 1rem;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #9a3412; margin-bottom: 0.35rem;">
+              📅 Nueva propuesta de horario del proveedor: ${fechaSug} · ${horaSugIni}${horaSugFin ? ' - ' + horaSugFin : ''}
+            </div>
+            ${sol.comentario_contrapropuesta ? `<p style="margin: 0 0 0.7rem 0; font-size: 0.85rem; color: #7c2d12; font-style: italic;">"${escaparHtml(sol.comentario_contrapropuesta)}"</p>` : ''}
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+              <button type="button" onclick="aceptarContrapropuestaCliente(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.55rem 1rem; border-radius: 0.6rem; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                ✓ Aceptar contrapropuesta
+              </button>
+              <button type="button" onclick="abrirModalRechazarContrapropuesta(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.55rem 1rem; border-radius: 0.6rem; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+                ✕ Rechazar contrapropuesta
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (estado === 'COMPLETADA') {
+        const cierre = sol.completado_en ? ' el ' + escaparHtml(formatearFechaHora(sol.completado_en)) : '';
+        bloqueEstadoExtra = `
+          <div style="margin-top: 0.75rem; background-color: #f0fdfa; border: 1px solid #99f6e4; border-radius: 0.75rem; padding: 0.65rem 0.9rem; font-size: 0.85rem; color: #115e59;">
+            <strong>Servicio finalizado${cierre}</strong>
+            ${sol.observaciones_finalizacion ? `<div style="margin-top: 0.25rem;">${escaparHtml(sol.observaciones_finalizacion)}</div>` : ''}
+          </div>
+        `;
+      } else if (estado === 'CANCELADA' && sol.motivo_rechazo_cancelacion) {
+        bloqueEstadoExtra = `
+          <div style="margin-top: 0.75rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.75rem; padding: 0.65rem 0.9rem; font-size: 0.85rem; color: #991b1b;">
+            <strong>Motivo:</strong> ${escaparHtml(sol.motivo_rechazo_cancelacion)}
+          </div>
+        `;
+      }
+
+      const puedeCancelar = estado === 'PENDIENTE' || estado === 'SUGERIDA' || estado === 'ACEPTADA';
+
       return `
-        <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+        <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
           <div style="display: flex; gap: 1.25rem; align-items: flex-start; flex: 1; min-width: 280px;">
             <div style="width: 3rem; height: 3rem; background-color: #ccfbf1; border-radius: 0.85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
               <svg style="width: 1.5rem; height: 1.5rem; color: #0d9488;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
               </svg>
             </div>
-            <div>
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.35rem 0;">
+            <div style="flex: 1;">
+              <h3 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0 0 0.3rem 0;">
                 <a href="${urlDetalle}" style="color: #0f172a; text-decoration: none;" onmouseover="this.style.color='#2563eb'" onmouseout="this.style.color='#0f172a'">${servicioNombre}</a>
               </h3>
-              <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 0.85rem 0;">${categoria}</p>
-              
+              <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 0.75rem 0;">${categoria}</p>
+
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.85rem; color: #64748b;">
-                <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                  <svg style="width: 1rem; height: 1rem; color: #94a3b8;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                  </svg>
-                  ${fecha}
-                </span>
+                <span>📅 ${fecha}</span>
+                ${horaIni ? `<span>🕒 ${horaIni}${horaFin ? ' - ' + horaFin : ''}</span>` : ''}
                 <span style="background-color: #f1f5f9; color: #334155; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 0.5rem; font-size: 0.8rem;">Atención a domicilio</span>
                 <span>Atendido por <strong>${proveedor}</strong></span>
               </div>
+              ${bloqueEstadoExtra}
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end;">
-            <span style="background-color: ${esRealizado ? '#dcfce7' : '#fef9c3'}; color: ${esRealizado ? '#166534' : '#854d0e'}; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">
-              ${esRealizado ? 'Realizado' : estado}
-            </span>
-            <a href="${urlDetalle}" style="display: inline-flex; justify-content: center; align-items: center; min-width: 100px; height: 40px; padding: 0 1.25rem; border-radius: 12px; font-size: 0.9rem; font-weight: 700; text-decoration: none; transition: all 0.2s ease; border: none; cursor: pointer; background-color: #2563eb; color: #ffffff;">
-              Ver detalle
-            </a>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.75rem;">
+            ${badgeEstadoCliente(sol)}
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+              <a href="${urlDetalle}" style="display: inline-flex; justify-content: center; align-items: center; min-width: 100px; height: 38px; padding: 0 1rem; border-radius: 10px; font-size: 0.88rem; font-weight: 700; text-decoration: none; border: none; cursor: pointer; background-color: #2563eb; color: #ffffff;">
+                Ver detalle
+              </a>
+              ${puedeCancelar ? `
+                <button type="button" onclick="abrirModalCancelarCliente(${sol.id})" style="display: inline-flex; justify-content: center; align-items: center; height: 38px; padding: 0 0.95rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: 1px solid #fca5a5; cursor: pointer; background-color: #ffffff; color: #dc2626;">
+                  Cancelar
+                </button>
+              ` : ''}
+            </div>
           </div>
         </div>
       `;
@@ -279,14 +418,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function cargarSolicitudesReales() {
     var urlApi = (window.BEC && window.BEC.cfg && window.BEC.cfg.api && window.BEC.cfg.api.solicitudes) ? window.BEC.cfg.api.solicitudes : '/api/solicitudes/';
-    
-    // CAMBIO 2: Usar window.BEC.api en lugar de fetch()
+
     window.BEC.api(urlApi)
       .then(function(res) {
         if (res && res.ok) {
-          var data = res.data; // BEC.api ya entrega el JSON parseado en .data
+          var data = res.data;
           todasLasSolicitudes = window.BEC && window.BEC.lista ? window.BEC.lista(data) : (Array.isArray(data) ? data : (data.results || []));
-          renderizarSolicitudes(todasLasSolicitudes);
+          filtrarSolicitudes();
         } else {
           renderizarSolicitudes([]);
         }
@@ -298,26 +436,148 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function filtrarSolicitudes() {
     const query = inputBuscar ? inputBuscar.value.toLowerCase().trim() : '';
+    const estadoFiltro = selectEstado ? selectEstado.value : '';
     const catFiltro = selectCategoria ? selectCategoria.value : '';
 
     const filtradas = todasLasSolicitudes.filter(s => {
       const servicio = obtenerNombreServicio(s).toLowerCase();
       const proveedor = obtenerNombreProveedor(s).toLowerCase();
       const cat = obtenerCategoria(s);
+      const estado = (s.estado || 'PENDIENTE').toUpperCase();
 
       const coincideBusqueda = !query || servicio.includes(query) || proveedor.includes(query) || cat.toLowerCase().includes(query);
+      const coincideEstado = !estadoFiltro || estado === estadoFiltro;
       const coincideCategoria = !catFiltro || cat === catFiltro;
 
-      return coincideBusqueda && coincideCategoria;
+      return coincideBusqueda && coincideEstado && coincideCategoria;
     });
 
     renderizarSolicitudes(filtradas);
   }
 
+  // HU-16: Aceptar contrapropuesta del proveedor
+  window.aceptarContrapropuestaCliente = function(id) {
+    if (!id) return;
+    window.BEC.api(window.BEC.url(window.BEC.cfg.api.solicitudAceptarContrapropuesta, id), {
+      method: 'POST',
+      body: {}
+    }).then(function(res) {
+      if (!res.ok) {
+        mostrarMensaje(extraerErrorApi(res.data, 'No se pudo aceptar la contrapropuesta.'), 'error');
+        return;
+      }
+      mostrarMensaje('¡Contrapropuesta aceptada! Tu reserva quedó confirmada con el nuevo horario.', 'ok');
+      cargarSolicitudesReales();
+    }).catch(function() {
+      mostrarMensaje('Error de conexión al aceptar la contrapropuesta.', 'error');
+    });
+  };
+
+  function mostrarErrorModal(texto) {
+    if (!errModal) return;
+    errModal.innerHTML = texto
+      ? '<div style="background-color:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding: 0.6rem 0.8rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 600;">' + escaparHtml(texto) + '</div>'
+      : '';
+  }
+
+  // HU-16: Abrir modal rechazar contrapropuesta
+  window.abrirModalRechazarContrapropuesta = function(id) {
+    solicitudIdActual = id;
+    accionActual = 'rechazar-contrapropuesta';
+    if (tituloModal) tituloModal.textContent = 'Rechazar contrapropuesta';
+    if (descModal) descModal.textContent = 'Si rechazas el nuevo horario sugerido, la solicitud quedará cancelada. Puedes indicar un motivo (opcional):';
+    if (btnConfirmarModal) btnConfirmarModal.textContent = 'Rechazar contrapropuesta';
+    if (inputMotivo) {
+      inputMotivo.value = '';
+      inputMotivo.placeholder = 'Motivo opcional (ej: No puedo en ese horario)...';
+    }
+    mostrarErrorModal('');
+    if (modalAccion) modalAccion.style.display = 'flex';
+  };
+
+  // HU-17: Abrir modal cancelar solicitud/reserva
+  window.abrirModalCancelarCliente = function(id) {
+    solicitudIdActual = id;
+    accionActual = 'cancelar';
+    if (tituloModal) tituloModal.textContent = 'Cancelar solicitud o reserva';
+    if (descModal) descModal.textContent = 'Indica el motivo por el cual deseas cancelar esta solicitud o reserva (obligatorio):';
+    if (btnConfirmarModal) btnConfirmarModal.textContent = 'Confirmar cancelación';
+    if (inputMotivo) {
+      inputMotivo.value = '';
+      inputMotivo.placeholder = 'Escribe el motivo de la cancelación...';
+    }
+    mostrarErrorModal('');
+    if (modalAccion) modalAccion.style.display = 'flex';
+  };
+
+  function cerrarModal() {
+    if (modalAccion) modalAccion.style.display = 'none';
+    solicitudIdActual = null;
+    accionActual = null;
+    mostrarErrorModal('');
+  }
+
+  if (btnCancelarModal) btnCancelarModal.addEventListener('click', cerrarModal);
+
+  if (btnConfirmarModal) {
+    btnConfirmarModal.addEventListener('click', function() {
+      if (!solicitudIdActual || !accionActual) return;
+      var motivo = inputMotivo ? inputMotivo.value.trim() : '';
+
+      if (accionActual === 'cancelar' && !motivo) {
+        mostrarErrorModal('Debes indicar el motivo de la cancelación.');
+        return;
+      }
+
+      var patron = accionActual === 'cancelar'
+        ? window.BEC.cfg.api.solicitudCancelar
+        : window.BEC.cfg.api.solicitudRechazarContrapropuesta;
+      var textoOriginal = btnConfirmarModal.textContent;
+      btnConfirmarModal.textContent = 'Procesando...';
+      btnConfirmarModal.disabled = true;
+      mostrarErrorModal('');
+
+      window.BEC.api(window.BEC.url(patron, solicitudIdActual), {
+        method: 'POST',
+        body: { motivo: motivo }
+      }).then(function(res) {
+        if (!res.ok) {
+          mostrarErrorModal(extraerErrorApi(res.data, 'No se pudo completar la operación.'));
+          return;
+        }
+        var fueCancelar = accionActual === 'cancelar';
+        cerrarModal();
+        mostrarMensaje(
+          fueCancelar
+            ? 'Solicitud/reserva cancelada correctamente. El horario ha sido liberado.'
+            : 'Contrapropuesta rechazada. La solicitud fue cancelada.',
+          'ok'
+        );
+        cargarSolicitudesReales();
+      }).catch(function() {
+        mostrarErrorModal('Error de conexión con el servidor.');
+      }).finally(function() {
+        btnConfirmarModal.textContent = textoOriginal;
+        btnConfirmarModal.disabled = false;
+      });
+    });
+  }
+
   if (inputBuscar) inputBuscar.addEventListener('input', filtrarSolicitudes);
+  if (selectEstado) selectEstado.addEventListener('change', filtrarSolicitudes);
   if (selectCategoria) selectCategoria.addEventListener('change', filtrarSolicitudes);
 
-  cargarCatalogoYSolicitudes();
+  window.BEC.requiereSesion(['CLIENTE']).then(function(perfil) {
+    if (!perfil) {
+      contenedor.innerHTML = `
+        <div style="text-align: center; padding: 3rem; background: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; color: #64748b;">
+          <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; color: #0f172a;">Esta vista es para cuentas de Cliente</p>
+          <p style="font-size: 0.9rem; margin: 0;">Si eres proveedor, gestiona tus solicitudes desde el <a href="{% url 'pagina-panel-proveedor' %}" style="color: #2563eb; font-weight: 700;">Panel de Proveedor</a>.</p>
+        </div>`;
+      return;
+    }
+    cargarCatalogoYSolicitudes();
+  });
 });
 </script>
 {% endblock %}
