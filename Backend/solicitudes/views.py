@@ -18,7 +18,10 @@ from .serializers import (
     SolicitudReservaSerializer,
 )
 from usuarios.authentication import CookieJWTAuthentication
-from usuarios.models import PerfilProveedor
+import datetime
+
+from django.utils.dateparse import parse_date
+from usuarios.models import PerfilProveedor, PeriodoNoDisponible
 from usuarios.validators import validar_horario_reserva
 
 
@@ -411,3 +414,60 @@ class ClienteSolicitudesViewSet(viewsets.ModelViewSet):
         ])
 
         return Response(self.get_serializer(solicitud).data, status=status.HTTP_200_OK)
+
+    # -------------------------------------------------------------------------
+    # HU-19: Agenda del proveedor (reservas ACEPTADAS en orden cronológico)
+    # GET /api/solicitudes/agenda/?desde=AAAA-MM-DD&hasta=AAAA-MM-DD
+    # Sin parámetros: de hoy en adelante (hasta 92 días).
+    # -------------------------------------------------------------------------
+    @action(detail=False, methods=['get'], url_path='agenda')
+    def agenda(self, request):
+        perfil = getattr(request.user, 'perfil', None)
+        if str(getattr(perfil, 'rol', '')).upper() not in ('PROVEEDOR', 'PRO'):
+            raise PermissionDenied('Solo los proveedores tienen agenda.')
+
+        def fecha_param(nombre):
+            valor = request.query_params.get(nombre)
+            if not valor:
+                return None
+            fecha = parse_date(valor)
+            if fecha is None:
+                raise ValidationError({nombre: 'Usa el formato AAAA-MM-DD.'})
+            return fecha
+
+        desde = fecha_param('desde') or timezone.localdate()
+        hasta = fecha_param('hasta') or (desde + datetime.timedelta(days=92))
+        if hasta < desde:
+            raise ValidationError({'hasta': 'La fecha final no puede ser anterior a la inicial.'})
+        if (hasta - desde).days > 92:
+            raise ValidationError({'hasta': 'El rango máximo es de 92 días.'})
+
+        # Siempre las del proveedor autenticado: no hay forma de pedir la agenda de otro
+        reservas = SolicitudReserva.objects.filter(
+            proveedor__perfil_usuario__usuario=request.user,
+            estado=SolicitudReserva.Estado.ACEPTADA,
+            fecha_solicitada__gte=desde,
+            fecha_solicitada__lte=hasta,
+        ).select_related(
+            'cliente__perfil', 'proveedor__perfil_usuario__usuario', 'servicio__categoria'
+        ).order_by('fecha_solicitada', 'hora_solicitada')
+
+        perfil_proveedor = getattr(perfil, 'perfil_profesional', None)
+        periodos = []
+        if perfil_proveedor:
+            periodos = [
+                {'id': p.id, 'fecha_inicio': p.fecha_inicio.isoformat(),
+                 'fecha_fin': p.fecha_fin.isoformat(), 'motivo': p.motivo}
+                for p in PeriodoNoDisponible.objects.filter(
+                    proveedor=perfil_proveedor, fecha_inicio__lte=hasta, fecha_fin__gte=desde
+                ).order_by('fecha_inicio')
+            ]
+
+        datos = self.get_serializer(reservas, many=True).data
+        return Response({
+            'desde': desde.isoformat(),
+            'hasta': hasta.isoformat(),
+            'reservas': datos,
+            'mensaje': '' if datos else 'No tienes reservas aceptadas para mostrar.',
+            'periodos_no_disponibles': periodos,
+        })

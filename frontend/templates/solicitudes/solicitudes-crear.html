@@ -160,7 +160,10 @@ span.flatpickr-weekday { color: var(--muted-foreground); font-size: var(--font-x
                 <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.5rem;">
                   Nombre completo <span style="color: #ef4444;">*</span>
                 </label>
-                <input type="text" id="nombre_cliente" class="form-input-field" placeholder="María González" required>
+                <!-- El nombre sale del perfil del cliente y no se puede editar aquí (igual que el correo) -->
+                <fieldset class="fieldset-oculto" disabled>
+                  <input type="text" id="nombre_cliente" class="form-input-field" placeholder="María González" required readonly aria-readonly="true" title="Se toma de tu perfil. Puedes cambiarlo en Mi perfil.">
+                </fieldset>
               </div>
 
               <div>
