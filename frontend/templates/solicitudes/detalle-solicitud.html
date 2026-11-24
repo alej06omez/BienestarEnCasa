@@ -193,6 +193,9 @@
                     <p><strong>Duración:</strong> <span id="d-duracion"></span></p>
                     <p id="p-cliente" hidden><strong>Cliente:</strong> <span id="d-cliente"></span></p>
                 </div>
+                <div class="fila">
+                    <p id="p-cliente-email" hidden><strong>Correo del cliente:</strong> <a id="d-cliente-email" href="#" style="color: #2563eb; word-break: break-all;"></a></p>
+                </div>
             </div>
 
             <!-- Columna derecha: Reserva y Lugar de atención -->
@@ -380,6 +383,10 @@
         texto('d-precio', BEC.dinero(s.precio_copia));
         texto('d-duracion', s.duracion_minutos_copia + ' minutos');
         opcional('p-cliente', 'd-cliente', s.cliente_nombre ? (s.cliente_nombre + (s.cliente_telefono ? ' (' + s.cliente_telefono + ')' : '')) : '');
+        // Correo de quien solicitó el servicio, junto al nombre
+        opcional('p-cliente-email', 'd-cliente-email', s.cliente_email || '');
+        var enlaceCorreo = document.getElementById('d-cliente-email');
+        if (enlaceCorreo) enlaceCorreo.href = s.cliente_email ? 'mailto:' + s.cliente_email : '#';
 
         texto('d-estado', BEC.ESTADOS_SOLICITUD[estado] || estado);
         var claseEstado = {
@@ -393,7 +400,8 @@
 
         texto('d-fecha', formatearFecha(s.fecha_solicitada));
         texto('d-hora', formatearHora(s.hora_solicitada));
-        texto('d-hora-fin', sumarMinutos(s.hora_solicitada, s.duracion_minutos_copia));
+        // HU-012 (10): la hora de fin la calcula el backend con la duración conservada
+        texto('d-hora-fin', s.hora_fin ? formatearHora(s.hora_fin) : sumarMinutos(s.hora_solicitada, s.duracion_minutos_copia));
         texto('d-direccion', s.direccion_atencion);
         texto('d-barrio', s.barrio_sector);
         opcional('p-complementaria', 'd-complementaria', s.informacion_complementaria);

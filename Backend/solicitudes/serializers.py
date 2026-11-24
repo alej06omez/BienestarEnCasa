@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
@@ -11,15 +13,19 @@ class SolicitudReservaSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()
     cliente_nombre = serializers.SerializerMethodField()
     cliente_telefono = serializers.SerializerMethodField()
+    cliente_email = serializers.SerializerMethodField()
     categoria_nombre = serializers.SerializerMethodField()
+    estado_display = serializers.CharField(source='get_estado_display', read_only=True)
+    hora_fin = serializers.SerializerMethodField()
 
     class Meta:
         model = SolicitudReserva
         fields = [
-            'id', 'cliente', 'cliente_nombre', 'cliente_telefono', 'proveedor', 'nombre_proveedor', 'servicio',
-            'categoria_nombre',
+            'id', 'cliente', 'cliente_nombre', 'cliente_telefono', 'cliente_email',
+            'proveedor', 'nombre_proveedor', 'servicio',
+            'categoria_nombre', 'estado_display',
             'nombre_servicio_copia', 'precio_copia', 'duracion_minutos_copia',
-            'fecha_solicitada', 'hora_solicitada', 'direccion_atencion',
+            'fecha_solicitada', 'hora_solicitada', 'hora_fin', 'direccion_atencion',
             'barrio_sector', 'informacion_complementaria', 'observaciones',
             'estado', 'motivo_rechazo_cancelacion',
             'fecha_sugerida', 'hora_sugerida', 'comentario_contrapropuesta',
@@ -38,6 +44,17 @@ class SolicitudReservaSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'proveedor': {'required': False},
         }
+
+    def get_hora_fin(self, obj):
+        """HU-012 (10) / HU-019 (2): fin = hora de inicio + duración conservada."""
+        if not obj.fecha_solicitada or not obj.hora_solicitada:
+            return None
+        inicio = datetime.combine(obj.fecha_solicitada, obj.hora_solicitada)
+        return (inicio + timedelta(minutes=obj.duracion_minutos_copia or 0)).strftime('%H:%M:%S')
+
+    def get_cliente_email(self, obj):
+        """Correo de quien solicitó el servicio (se muestra en el detalle junto al nombre)."""
+        return getattr(obj.cliente, 'email', '') or '' if obj.cliente else ''
 
     def get_categoria_nombre(self, obj):
         if obj.servicio and obj.servicio.categoria:

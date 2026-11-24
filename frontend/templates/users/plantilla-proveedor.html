@@ -77,7 +77,7 @@ span.flatpickr-weekday { color: #717182; font-size: var(--font-xs); font-weight:
         </div>
         <div style="background-color: #f0fdf4; border-radius: 1rem; padding: 0.75rem 1.25rem; text-align: center; min-width: 80px;">
           <div id="stat-clientes" style="font-size: var(--font-lg); font-weight: 800; color: #166534; line-height: 1;">0</div>
-          <span style="font-size: var(--font-xs); font-weight: 700; color: #15803d;">Clientes</span>
+          <span style="font-size: var(--font-xs); font-weight: 700; color: #15803d;">Próximas citas</span>
         </div>
       </div>
     </div>
@@ -100,7 +100,7 @@ span.flatpickr-weekday { color: #717182; font-size: var(--font-xs); font-weight:
         <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
         </svg>
-        Mis clientes
+        Mi agenda
       </button>
 
       <button type="button" class="tab-btn" data-tab="tab-horario" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: transparent; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: var(--font-md);">
@@ -149,11 +149,14 @@ span.flatpickr-weekday { color: #717182; font-size: var(--font-xs); font-weight:
 
     </div>
 
-    <!-- PESTAÑA 2: MIS CLIENTES -->
+    <!-- PESTAÑA 2: MI AGENDA (HU-019) — reservas ACEPTADAS de hoy en adelante, en orden cronológico -->
     <div id="tab-clientes" class="tab-content" style="display: none;">
+      <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 1rem 0;">
+        Tus reservas aceptadas de hoy en adelante, ordenadas por fecha y hora.
+      </p>
       <div id="contenedorClientes" style="display: flex; flex-direction: column; gap: 1rem;">
         <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 3rem; text-align: center; color: #64748b;">
-          Cargando citas con clientes...
+          Cargando tu agenda...
         </div>
       </div>
     </div>
@@ -376,7 +379,9 @@ document.addEventListener('DOMContentLoaded', function() {
         todasLasSolicitudes = window.BEC.lista(res.data);
 
         const pendientes = todasLasSolicitudes.filter(s => (s.estado || '').toUpperCase() === 'PENDIENTE');
-        const clientes = todasLasSolicitudes.filter(s => ['ACEPTADA', 'COMPLETADA'].includes((s.estado || '').toUpperCase()));
+        const hoyIso = fechaIsoLocal(new Date());
+        const clientes = todasLasSolicitudes.filter(s =>
+          (s.estado || '').toUpperCase() === 'ACEPTADA' && String(s.fecha_solicitada || '') >= hoyIso);
 
         document.getElementById('stat-pendientes').innerText = pendientes.length;
         document.getElementById('stat-clientes').innerText = clientes.length;
@@ -610,65 +615,102 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function fechaIsoLocal(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function etiquetaDiaAgenda(iso) {
+    var p = String(iso).split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    var texto = d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var hoy = fechaIsoLocal(new Date());
+    var manana = new Date(); manana.setDate(manana.getDate() + 1);
+    if (iso === hoy) return 'Hoy · ' + texto;
+    if (iso === fechaIsoLocal(manana)) return 'Mañana · ' + texto;
+    return texto;
+  }
+
+  // HU-019: la agenda sale de GET /api/solicitudes/agenda/ (solo ACEPTADAS, de hoy en adelante,
+  // ordenadas por fecha y hora de inicio, con la hora de fin calculada por el backend).
   function renderizarClientes() {
     const contenedor = document.getElementById('contenedorClientes');
     if (!contenedor) return;
 
-    // Clientes/Citas aceptadas o completadas ordenadas cronológicamente
-    const aceptadas = todasLasSolicitudes
-      .filter(s => ['ACEPTADA', 'COMPLETADA'].includes((s.estado || '').toUpperCase()))
-      .sort((a, b) => {
-        const fechaA = `${a.fecha_solicitada || ''}T${a.hora_solicitada || '00:00:00'}`;
-        const fechaB = `${b.fecha_solicitada || ''}T${b.hora_solicitada || '00:00:00'}`;
-        return fechaA.localeCompare(fechaB);
+    window.BEC.api('/api/solicitudes/agenda/').then(function(res) {
+      if (!res.ok) {
+        contenedor.innerHTML = `
+          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #fecaca; padding: 2rem; text-align: center; color: #b91c1c;">
+            ${escaparHtml(extraerErrorApi(res.data, 'No se pudo cargar tu agenda.'))}
+          </div>`;
+        return;
+      }
+      const reservas = (res.data && res.data.reservas) || [];
+      document.getElementById('stat-clientes').innerText = reservas.length;
+
+      if (reservas.length === 0) {
+        contenedor.innerHTML = `
+          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 3rem; text-align: center; color: #64748b;">
+            ${escaparHtml((res.data && res.data.mensaje) || 'No tienes reservas aceptadas para mostrar.')}
+          </div>`;
+        return;
+      }
+
+      // Agrupar por día (ya vienen ordenadas por fecha y hora)
+      const dias = [];
+      const porDia = {};
+      reservas.forEach(function(r) {
+        if (!porDia[r.fecha_solicitada]) { porDia[r.fecha_solicitada] = []; dias.push(r.fecha_solicitada); }
+        porDia[r.fecha_solicitada].push(r);
       });
 
-    if (aceptadas.length === 0) {
-      contenedor.innerHTML = `
-        <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 3rem; text-align: center; color: #64748b;">
-          Aún no tienes clientes o citas confirmadas.
-        </div>`;
-      return;
-    }
+      contenedor.innerHTML = dias.map(function(dia) {
+        const tarjetas = porDia[dia].map(function(sol) {
+          const cliente = escaparHtml(obtenerNombreCliente(sol));
+          const servicio = escaparHtml(obtenerNombreServicio(sol));
+          const horaInicio = escaparHtml(obtenerHora(sol));
+          const horaFin = escaparHtml(sol.hora_fin
+            ? formatearHoraLectura(sol.hora_fin)
+            : calcularHoraFin(sol.hora_solicitada, sol.duracion_minutos_copia || 60));
+          const telefono = obtenerTelefonoCliente(sol);
+          const direccion = escaparHtml(String(sol.direccion_atencion || 'Dirección no especificada').replace(/\(Principal\)/gi, '').trim());
+          const barrio = sol.barrio_sector ? ` (${escaparHtml(sol.barrio_sector)})` : '';
+          const complemento = sol.informacion_complementaria
+            ? `<p style="color: #64748b; font-size: var(--font-xs); margin: 0.2rem 0 0 0;">${escaparHtml(sol.informacion_complementaria)}</p>` : '';
 
-    contenedor.innerHTML = aceptadas.map(sol => {
-      const cliente = escaparHtml(obtenerNombreCliente(sol));
-      const servicio = escaparHtml(obtenerNombreServicio(sol));
-      const fecha = escaparHtml(obtenerFecha(sol));
-      const horaInicio = escaparHtml(obtenerHora(sol));
-      const duracion = sol.duracion_minutos_copia || 60;
-      const horaFin = escaparHtml(calcularHoraFin(sol.hora_solicitada || horaInicio, duracion));
-      const telefono = escaparHtml(obtenerTelefonoCliente(sol));
-      const estado = (sol.estado || '').toUpperCase();
-
-      let direccionCruda = sol.direccion_atencion || 'Dirección no especificada';
-      const direccion = escaparHtml(direccionCruda.replace(/\(Principal\)/gi, '').trim());
-      const barrio = sol.barrio_sector ? ` (${escaparHtml(sol.barrio_sector)})` : '';
-
-      return `
-        <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-          <div>
-            <h4 style="font-size: var(--font-lg); font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h4>
-            <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.3rem 0;">${servicio}</p>
-            <p style="color: #64748b; font-size: var(--font-xs); margin: 0 0 0.2rem 0;">📅 ${fecha} (${horaInicio} - ${horaFin}) • 📞 ${telefono}</p>
-            <p style="color: #475569; font-size: var(--font-xs); margin: 0;">📍 ${direccion}${barrio}</p>
-          </div>
-          <div style="text-align: right;">
-            ${badgeEstadoProveedor(sol)}
-            ${estado === 'ACEPTADA' ? `
-              <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
+          return `
+            <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0d9488; border-radius: 0.85rem; padding: 0.9rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <div>
+                <div style="font-weight: 800; color: #0f172a; font-size: var(--font-md);">🕒 ${horaInicio} – ${horaFin} · ${servicio}</div>
+                <p style="color: #475569; font-size: var(--font-sm); margin: 0.25rem 0 0 0;">Cliente: <strong>${cliente}</strong>${telefono ? ' • 📞 ' + escaparHtml(telefono) : ''}</p>
+                <p style="color: #475569; font-size: var(--font-xs); margin: 0.2rem 0 0 0;">📍 ${direccion}${barrio}</p>
+                ${complemento}
+              </div>
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                 <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                   ✓ Finalizar
                 </button>
                 <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                   Cancelar
                 </button>
+                <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: var(--font-xs);">
+                  Ver detalle
+                </a>
               </div>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
+            </div>`;
+        }).join('');
+
+        return `
+          <section style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem;">
+            <h3 style="margin: 0 0 0.85rem 0; font-size: var(--font-md); font-weight: 800; color: #0f172a; text-transform: capitalize;">${escaparHtml(etiquetaDiaAgenda(dia))}</h3>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem;">${tarjetas}</div>
+          </section>`;
+      }).join('');
+    }).catch(function() {
+      contenedor.innerHTML = `
+        <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #fecaca; padding: 2rem; text-align: center; color: #b91c1c;">
+          No se pudo conectar con el servidor.
+        </div>`;
+    });
   }
 
   const NOMBRES_DIA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
