@@ -69,6 +69,9 @@ body { font-family: var(--font-main); }
     .period-item { border-top: 1px solid #e2e8f0; padding: .85rem 0; display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
     .period-item p { margin: .1rem 0; color: #0f172a; }
     .period-item small { color: #64748b; }
+    .period-action { display: inline-flex; align-items: center; min-height: 44px; padding: 0 .4rem; border: 0; border-radius: var(--radius); background: none; color: var(--primary); font: 600 var(--font-sm)/1.4 var(--font-main); text-decoration: none; cursor: pointer; }
+    .period-action:hover { color: var(--primary-hover); text-decoration: none; }
+    .period-action:focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 2px; }
     .period-delete { flex: 0 0 auto; }
     .period-delete button { background: #ef4444; padding: .55rem .7rem; }
     .empty-periods { color: #64748b; font-size: var(--font-sm); }
@@ -211,7 +214,7 @@ body { font-family: var(--font-main); }
                         {% if periodo_form.motivo.errors %}<div class="availability-errors">{{ periodo_form.motivo.errors }}</div>{% endif %}
                     </div>
                     <button type="submit">{% if periodo_editando %}Actualizar periodo{% else %}Registrar periodo{% endif %}</button>
-                    {% if periodo_editando %}<a href="{% url 'pagina-disponibilidad' %}" style="margin-left: .5rem; color: #475569;">Cancelar</a>{% endif %}
+                    {% if periodo_editando %}<a class="period-action" href="{% url 'pagina-disponibilidad' %}" style="margin-left: .5rem;">Cancelar</a>{% endif %}
                 </form>
 
                 <div class="period-list" aria-live="polite">
@@ -221,7 +224,7 @@ body { font-family: var(--font-main); }
                             <div>
                                 <p>{{ periodo.fecha_inicio|date:'d/m/Y' }}{% if periodo.fecha_fin != periodo.fecha_inicio %} – {{ periodo.fecha_fin|date:'d/m/Y' }}{% endif %}</p>
                                 {% if periodo.motivo %}<small>{{ periodo.motivo }}</small>{% endif %}
-                                <div><a href="{% url 'pagina-disponibilidad' %}?editar_periodo={{ periodo.id }}">Editar</a></div>
+                                <div><a class="period-action" href="{% url 'pagina-disponibilidad' %}?editar_periodo={{ periodo.id }}">Editar</a></div>
                             </div>
                             <form method="post" action="{% url 'pagina-disponibilidad' %}" class="period-delete">
                                 {% csrf_token %}
