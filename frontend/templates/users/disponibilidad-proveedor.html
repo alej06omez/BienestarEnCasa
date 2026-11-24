@@ -7,7 +7,32 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
 <style>
+    :root {
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-size: 16px;
+    --font-xs: .75rem;
+    --font-sm: .875rem;
+    --font-md: var(--font-size);
+    --font-lg: 1.25rem;
+    --font-xl: 2.25rem;
+    --radius: 0.625rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --background: #ffffff;
+    --foreground: #030213;
+    --primary: #1a68ff;
+    --primary-hover: #0052e0;
+    --primary-dark: #030213;
+    --secondary: #00a88f;
+    --muted: #ececf0;
+    --muted-foreground: #717182;
+    --border: rgba(0, 0, 0, 0.1);
+    --input-background: #f3f3f5;
+}
+body { font-family: var(--font-main); }
+.availability-page, .availability-page button, .availability-page input, .availability-page select, .availability-page textarea { font-family: var(--font-main); }
     .availability-page {
         width: 100%;
         background: #f8fafc;
@@ -16,23 +41,27 @@
     }
     .availability-content { max-width: 1100px; margin: 0 auto; }
     .availability-heading { margin-bottom: 1.75rem; }
-    .availability-heading h1 { color: #0f172a; font-size: 2rem; margin: 0 0 .35rem; }
+    .availability-heading h1 { color: #0f172a; font-size: var(--font-xl); margin: 0 0 .35rem; }
     .availability-heading p { color: #64748b; margin: 0; }
     .availability-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); gap: 1.25rem; align-items: start; }
     .availability-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,.03); }
-    .availability-card h2 { color: #0f172a; font-size: 1.15rem; margin: 0 0 1rem; }
+    .availability-card h2 { color: #0f172a; font-size: var(--font-md); margin: 0 0 1rem; }
     .availability-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
     .availability-day { border: 1px solid #e2e8f0; border-radius: .75rem; padding: .85rem; }
     .availability-day-label { display: flex; gap: .5rem; align-items: center; margin-bottom: .65rem; color: #0f172a; font-weight: 700; }
     .availability-times { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-    .availability-times label, .period-form label { display: block; color: #475569; font-size: .8rem; font-weight: 600; margin-bottom: .3rem; }
-    .availability-times select, .period-form input { width: 100%; padding: .6rem .65rem; border: 1px solid #cbd5e1; border-radius: .55rem; background: #fff; box-sizing: border-box; font-size: 0.85rem; color: #0f172a; outline: none; }
-    .availability-errors { color: #b91c1c; font-size: .82rem; margin: .35rem 0 .65rem; font-weight: 600; }
-    .availability-save, .period-form button, .period-delete button { background: #1a68ff; color: #fff; border: 0; border-radius: .65rem; padding: .7rem 1rem; font-weight: 700; cursor: pointer; }
+    .availability-times label, .period-form label { display: block; color: #475569; font-size: var(--font-sm); font-weight: 600; margin-bottom: .3rem; }
+    .availability-times select, .period-form input { width: 100%; padding: .6rem .65rem; border: 1px solid #cbd5e1; border-radius: .55rem; background: #fff; box-sizing: border-box; font-size: var(--font-sm); color: #0f172a; outline: none; }
+    .availability-page input:focus-visible, .availability-page select:focus-visible, .availability-page textarea:focus-visible, .availability-page button:focus-visible { outline: 3px solid var(--primary-hover); outline-offset: 2px; }
+    .availability-page input[type="checkbox"] { accent-color: var(--primary); }
+    .availability-errors { color: #b91c1c; font-size: var(--font-sm); margin: .35rem 0 .65rem; font-weight: 600; }
+    .availability-save, .period-form button, .period-delete button { background: var(--primary); color: #fff; border: 0; border-radius: .65rem; padding: .7rem 1rem; min-height: 44px; font-weight: 700; cursor: pointer; transition: background-color .2s ease; }
+    .availability-save:hover, .period-form button:hover { background: var(--primary-hover); }
+    .period-delete button:hover { background: #b91c1c; }
     .availability-save { margin-top: 1rem; width: 100%; }
     .period-form > div { margin-bottom: .85rem; }
     .period-form small { display: block; color: #64748b; margin-top: .25rem; }
-    .availability-message { border-radius: .65rem; padding: .8rem 1rem; margin: 0 0 1rem; font-weight: 600; font-size: .9rem; }
+    .availability-message { border-radius: .65rem; padding: .8rem 1rem; margin: 0 0 1rem; font-weight: 600; font-size: var(--font-sm); }
     .availability-message.success { color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; }
     .availability-message.error { color: #991b1b; background: #fee2e2; border: 1px solid #fecaca; }
     .availability-message ul, .availability-errors ul { margin: 0; padding-left: 1.2rem; }
@@ -42,12 +71,44 @@
     .period-item small { color: #64748b; }
     .period-delete { flex: 0 0 auto; }
     .period-delete button { background: #ef4444; padding: .55rem .7rem; }
-    .empty-periods { color: #64748b; font-size: .9rem; }
+    .empty-periods { color: #64748b; font-size: var(--font-sm); }
     @media (max-width: 760px) {
         .availability-grid { grid-template-columns: 1fr; }
         .availability-days { grid-template-columns: 1fr; }
-        .availability-heading h1 { font-size: 1.65rem; }
+        .availability-heading h1 { font-size: var(--font-lg); }
     }
+    .flatpickr-calendar { width: 304px; padding: .65rem; border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: 0 12px 32px rgba(3, 2, 19, .14); font-family: var(--font-main); }
+    .flatpickr-months .flatpickr-month { height: 2.5rem; }
+    .flatpickr-current-month { color: var(--foreground); font-size: var(--font-md); font-weight: 600; }
+    .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year {
+        appearance: none; border: 1px solid var(--border); border-radius: var(--radius);
+        background: var(--input-background); color: var(--foreground);
+        font-family: var(--font-main); font-size: var(--font-md); font-weight: 600;
+        line-height: 1.5; padding: .3rem .5rem; vertical-align: middle;
+    }
+    .flatpickr-current-month .flatpickr-monthDropdown-months { cursor: pointer; }
+    .flatpickr-current-month .numInputWrapper { width: 4.5rem; }
+    .flatpickr-current-month .numInputWrapper input.cur-year { width: 100%; text-align: center; }
+    .flatpickr-current-month .flatpickr-monthDropdown-months:hover,
+    .flatpickr-current-month .numInputWrapper:hover input.cur-year { border-color: var(--primary); }
+    .flatpickr-current-month .flatpickr-monthDropdown-months:focus-visible,
+    .flatpickr-current-month input.cur-year:focus-visible {
+        outline: 2px solid var(--primary-hover); outline-offset: 2px;
+    }
+    .flatpickr-monthDropdown-months option { background: var(--background); color: var(--foreground); font-family: var(--font-main); }
+    .flatpickr-weekdays { height: 2rem; }
+    span.flatpickr-weekday { color: var(--muted-foreground); font-size: var(--font-xs); font-weight: 600; }
+    .flatpickr-days, .dayContainer { width: 280px; min-width: 280px; max-width: 280px; }
+    .flatpickr-day { max-width: 40px; height: 40px; line-height: 40px; border: 0; border-radius: 50%; color: var(--foreground); font-family: var(--font-main); font-size: var(--font-sm); }
+    .flatpickr-day:hover { background: var(--muted); }
+    .flatpickr-day.today { border: 1px solid var(--primary); }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+    .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+    .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: #c4c4cc; }
+    .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: var(--foreground); }
+    .availability-date-input { min-height: 44px; background: var(--input-background); }
+    .availability-date-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26, 104, 255, .16); }
+    @media (max-width: 360px) { .flatpickr-calendar { width: 286px; } .flatpickr-days, .dayContainer { width: 266px; min-width: 266px; max-width: 266px; } .flatpickr-day { max-width: 38px; } }
 </style>
 {% endblock %}
 
@@ -180,47 +241,34 @@
 {% endblock %}
 
 {% block extra_body %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    function validarFinDeSemana(input) {
-        if (!input) return;
-
-        var msgError = input.nextElementSibling;
-        if (!msgError || !msgError.classList.contains('availability-errors')) {
-            msgError = document.createElement('div');
-            msgError.className = 'availability-errors';
-            msgError.style.display = 'none';
-            msgError.textContent = 'No se trabaja fines de semana.';
-            input.parentNode.insertBefore(msgError, input.nextSibling);
-        }
-
-        input.addEventListener('change', function() {
-            if (!this.value) {
-                msgError.style.display = 'none';
-                return;
-            }
-
-            var fechaPartes = this.value.split('-');
-            if (fechaPartes.length === 3) {
-                var anio = parseInt(fechaPartes[0], 10);
-                var mes = parseInt(fechaPartes[1], 10) - 1;
-                var dia = parseInt(fechaPartes[2], 10);
-                var fecha = new Date(anio, mes, dia);
-
-                var diaSemana = fecha.getDay();
-                if (diaSemana === 0 || diaSemana === 6) {
-                    this.value = '';
-                    msgError.style.display = 'block';
-                } else {
-                    msgError.style.display = 'none';
-                }
-            }
+document.addEventListener("DOMContentLoaded", function() {
+    if (typeof flatpickr !== "function") return;
+    var spanish = flatpickr.l10ns.es;
+    var locale = Object.assign({}, spanish, {
+        firstDayOfWeek: 1,
+        weekdays: Object.assign({}, spanish.weekdays, { shorthand: ["D", "L", "M", "X", "J", "V", "S"] })
+    });
+    document.querySelectorAll(".period-form input[type='date']").forEach(function(input) {
+        var picker = flatpickr(input, {
+            altInput: true,
+            altInputClass: "availability-date-input",
+            altFormat: "d/m/Y",
+            dateFormat: "Y-m-d",
+            disableMobile: true,
+            locale: locale,
+            disable: [function(date) { return date.getDay() === 0 || date.getDay() === 6; }]
         });
-    }
-
-    var inputsFecha = document.querySelectorAll('.period-form input[type="date"], .period-form input[name*="fecha"]');
-    inputsFecha.forEach(function(input) {
-        validarFinDeSemana(input);
+        if (picker.altInput) {
+            picker.altInput.id = input.id + "_visible";
+            var label = document.querySelector("label[for='" + input.id + "']");
+            if (label) {
+                label.htmlFor = picker.altInput.id;
+                picker.altInput.setAttribute("aria-label", label.textContent.trim());
+            }
+        }
     });
 });
 </script>
