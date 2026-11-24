@@ -9,6 +9,31 @@
 
 {% block extra_head %}
 <style>
+    :root {
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size: 16px;
+  --font-xs: .75rem;
+  --font-sm: .875rem;
+  --font-md: var(--font-size);
+  --font-lg: 1.25rem;
+  --font-xl: 2.25rem;
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --background: #ffffff;
+  --foreground: #030213;
+  --primary: #1a68ff;
+  --primary-hover: #0052e0;
+  --primary-dark: #030213;
+  --secondary: #00a88f;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --border: rgba(0, 0, 0, 0.1);
+  --input-background: #f3f3f5;
+}
+    body { font-family: var(--font-main); }
+    .catalog-container { font-family: var(--font-main); }
+    .catalog-container button, .catalog-container a, .catalog-container input { font-family: inherit; }
     .catalog-container {
         max-width: 1280px;
         margin: 32px auto 48px auto;
@@ -23,7 +48,7 @@
     }
 
     .catalog-title {
-        font-size: 2.25rem;
+        font-size: var(--font-xl);
         font-weight: 800;
         color: #0F172A;
         margin-bottom: 6px;
@@ -32,7 +57,7 @@
 
     .catalog-subtitle {
         color: #64748B;
-        font-size: 1rem;
+        font-size: var(--font-md);
     }
 
     /* Buscador */
@@ -48,14 +73,14 @@
         border-radius: 14px;
         border: 1px solid #CBD5E1;
         background-color: #ffffff;
-        font-size: 0.95rem;
+        font-size: var(--font-md);
         color: #0F172A;
         outline: none;
         transition: all 0.2s ease;
     }
 
     .search-input:focus {
-        border-color: #1A68FF;
+        border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(26, 104, 255, 0.15);
     }
 
@@ -69,7 +94,7 @@
     }
 
     .section-title {
-        font-size: 1.2rem;
+        font-size: var(--font-lg);
         font-weight: 700;
         color: #1E293B;
         margin-bottom: 16px;
@@ -92,14 +117,14 @@
     }
 
     .provider-name {
-        font-size: 1.1rem;
+        font-size: var(--font-md);
         font-weight: 700;
         color: #0F172A;
         margin-bottom: 4px;
     }
 
     .provider-desc {
-        font-size: 0.85rem;
+        font-size: var(--font-sm);
         color: #64748B;
         margin-bottom: 12px;
         display: -webkit-box;
@@ -123,7 +148,7 @@
         border: 1px solid #CBD5E1;
         background-color: #ffffff;
         color: #475569;
-        font-size: 0.85rem;
+        font-size: var(--font-sm);
         font-weight: 700;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -132,12 +157,12 @@
 
     .category-btn:hover {
         border-color: #93C5FD;
-        color: #1A68FF;
+        color: var(--primary);
     }
 
     .category-btn.active {
-        background-color: #1A68FF;
-        border-color: #1A68FF;
+        background-color: var(--primary);
+        border-color: var(--primary);
         color: #ffffff !important;
     }
 
@@ -175,9 +200,9 @@
         display: inline-flex;
         align-items: center;
         background-color: #eff6ff;
-        color: #2563eb;
+        color: var(--primary);
         font-weight: 700;
-        font-size: 0.8rem;
+        font-size: var(--font-sm);
         padding: 0.25rem 0.75rem;
         border-radius: 9999px;
         margin-bottom: 1rem;
@@ -188,7 +213,7 @@
     }
 
     .service-name {
-        font-size: 1.25rem;
+        font-size: var(--font-lg);
         font-weight: 800;
         color: #0F172A;
         margin-bottom: 4px;
@@ -196,7 +221,7 @@
 
     .service-category-subtext {
         color: #64748B;
-        font-size: 0.9rem;
+        font-size: var(--font-sm);
         line-height: 1.4;
         margin-bottom: 24px;
         flex-grow: 1;
@@ -211,33 +236,33 @@
     }
 
     .service-price {
-        font-size: 1.35rem;
+        font-size: var(--font-lg);
         font-weight: 800;
         color: #0F172A;
         line-height: 1;
     }
 
     .service-duration {
-        font-size: 0.8rem;
+        font-size: var(--font-sm);
         color: #94A3B8;
         display: block;
         margin-top: 4px;
     }
 
     .btn-request {
-        background-color: #1A68FF;
+        background-color: var(--primary);
         color: #ffffff !important;
         padding: 10px 22px;
         border-radius: 12px;
         text-decoration: none;
         font-weight: 700;
-        font-size: 0.9rem;
+        font-size: var(--font-sm);
         transition: background-color 0.2s ease;
         display: inline-block;
     }
 
     .btn-request:hover {
-        background-color: #0052E0;
+        background-color: var(--primary-hover);
     }
 
     .btn-detail {
@@ -247,7 +272,7 @@
         border-radius: 12px;
         text-decoration: none;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: var(--font-sm);
         transition: background-color 0.2s ease;
     }
 

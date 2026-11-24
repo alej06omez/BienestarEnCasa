@@ -4,9 +4,34 @@
 
 {% block body %}
 <style>
+    :root {
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size: 16px;
+  --font-xs: .75rem;
+  --font-sm: .875rem;
+  --font-md: var(--font-size);
+  --font-lg: 1.25rem;
+  --font-xl: 2.25rem;
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --background: #ffffff;
+  --foreground: #030213;
+  --primary: #1a68ff;
+  --primary-hover: #0052e0;
+  --primary-dark: #030213;
+  --secondary: #00a88f;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --border: rgba(0, 0, 0, 0.1);
+  --input-background: #f3f3f5;
+}
+    body { font-family: var(--font-main); }
+    .container { font-family: var(--font-main); }
+    .container button, .container a { font-family: inherit; }
     .titulo-principal {
         text-align: center;
-        font-size: 2.5rem;
+        font-size: var(--font-xl);
         font-weight: bold;
         margin-bottom: 2rem;
     }
@@ -24,7 +49,7 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.02);
     }
     .tarjeta-detalle h2 {
-        font-size: 1.5rem;
+        font-size: var(--font-lg);
         font-weight: bold;
         text-align: center;
         margin-bottom: 1.5rem;
@@ -74,7 +99,7 @@
         height: 44px;
         padding: 0 1.25rem;
         border-radius: 12px;
-        font-size: 0.9rem;
+        font-size: var(--font-sm);
         font-weight: 700;
         text-decoration: none;
         transition: all 0.2s ease;
@@ -82,11 +107,11 @@
         cursor: pointer;
     }
     .btn-principal {
-        background-color: #2563eb;
+        background-color: var(--primary);
         color: #ffffff !important;
     }
     .btn-principal:hover {
-        background-color: #1d4ed8;
+        background-color: var(--primary-hover);
     }
     .btn-secundario {
         background-color: #f1f5f9;
@@ -109,29 +134,29 @@
             <!-- Tarjeta Izquierda: Información del Servicio -->
             <div class="tarjeta-detalle">
                 <h2>Información del Servicio</h2>
-                <p id="titulo-servicio" style="font-size: 1.55rem; margin-bottom: 1rem; font-weight: bold;"></p>
+                <p id="titulo-servicio" style="font-size: var(--font-lg); margin-bottom: 1rem; font-weight: bold;"></p>
 
                 <div class="info-grid">
                     <div class="info-item">
-                        <p style="color: #64748b; font-size: 0.85rem; font-weight: 600;">Proveedor:</p>
+                        <p style="color: #64748b; font-size: var(--font-sm); font-weight: 600;">Proveedor:</p>
                         <p id="d-proveedor" style="font-weight: 700;"></p>
                     </div>
                     <div class="info-item">
-                        <p style="color: #64748b; font-size: 0.85rem; font-weight: 600;">Categoría:</p>
+                        <p style="color: #64748b; font-size: var(--font-sm); font-weight: 600;">Categoría:</p>
                         <p id="d-categoria" style="font-weight: 700;"></p>
                     </div>
                     <div class="info-item">
-                        <p style="color: #64748b; font-size: 0.85rem; font-weight: 600;">Duración:</p>
+                        <p style="color: #64748b; font-size: var(--font-sm); font-weight: 600;">Duración:</p>
                         <p id="d-duracion" style="font-weight: 700;"></p>
                     </div>
                     <div class="info-item">
-                        <p style="color: #64748b; font-size: 0.85rem; font-weight: 600;">Precio:</p>
+                        <p style="color: #64748b; font-size: var(--font-sm); font-weight: 600;">Precio:</p>
                         <p id="d-precio" style="font-weight: 700;"></p>
                     </div>
                 </div>
 
                 <div class="descripcion">
-                    <p style="color: #64748b; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem;">Descripción:</p>
+                    <p style="color: #64748b; font-size: var(--font-sm); font-weight: 600; margin-bottom: 0.35rem;">Descripción:</p>
                     <div id="d-descripcion"></div>
                 </div>
                 
@@ -187,7 +212,7 @@
                 elProveedor.appendChild(h('a', {
                     href: '/proveedor/' + s.proveedor + '/',
                     text: nombreProv,
-                    style: 'color: #2563eb; text-decoration: none;'
+                    style: 'color: #1A68FF; text-decoration: none;'
                 }));
             } else {
                 elProveedor.textContent = nombreProv;

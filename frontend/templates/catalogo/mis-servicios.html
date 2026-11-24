@@ -3,26 +3,60 @@
 
 {% block title %}Mis Servicios - Bienestar en Casa{% endblock %}
 
+{% block extra_head %}
+<style>
+  :root {
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-size: 16px;
+  --font-xs: .75rem;
+  --font-sm: .875rem;
+  --font-md: var(--font-size);
+  --font-lg: 1.25rem;
+  --font-xl: 2.25rem;
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --background: #ffffff;
+  --foreground: #030213;
+  --primary: #1a68ff;
+  --primary-hover: #0052e0;
+  --primary-dark: #030213;
+  --secondary: #00a88f;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --border: rgba(0, 0, 0, 0.1);
+  --input-background: #f3f3f5;
+}
+  body { font-family: var(--font-main); }
+  #modalNuevoServicio button[type="submit"], #btnAbrirModalServicio { background-color: var(--primary) !important; font-family: inherit; }
+  #modalNuevoServicio button[type="submit"]:hover, #btnAbrirModalServicio:hover { background-color: var(--primary-hover) !important; }
+  #gridMisServicios a[href*="/editar/"] { background-color: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; font-family: inherit; }
+  #gridMisServicios a[href*="/editar/"]:hover { background-color: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
+  #modalNuevoServicio, #modalEliminarServicio { font-family: var(--font-main); }
+  #modalNuevoServicio button, #modalEliminarServicio button, #gridMisServicios button { font-family: inherit; }
+</style>
+{% endblock %}
+
 {% block header_nav %}
     {% include 'nav_proveedor.html' %}
 {% endblock %}
 
 {% block body %}
-<div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2.5rem 1rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
+<div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2.5rem 1rem; font-family: var(--font-main); box-sizing: border-box;">
   <div style="max-width: 68rem; margin: 0 auto;">
     
     <!-- Encabezado -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
       <div>
-        <h1 style="font-size: 2.25rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">
+        <h1 style="font-size: var(--font-xl); font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">
           Mis Servicios
         </h1>
-        <p style="color: #64748b; font-size: 0.95rem; margin: 0;">
+        <p style="color: #64748b; font-size: var(--font-md); margin: 0;">
           Administra el catálogo de servicios que ofreces a los clientes.
         </p>
       </div>
 
-      <button type="button" id="btnAbrirModalServicio" style="background-color: #0d9488; color: #ffffff; font-weight: 700; padding: 0.75rem 1.25rem; border-radius: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem;">
+      <button type="button" id="btnAbrirModalServicio" style="background-color: #1A68FF; color: #ffffff; font-weight: 700; padding: 0.75rem 1.25rem; border-radius: 0.75rem; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; font-size: var(--font-sm);">
         <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Agregar nuevo servicio
       </button>
@@ -43,8 +77,8 @@
   <div style="background-color: #ffffff; border-radius: 1.25rem; width: 100%; max-width: 32rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); box-sizing: border-box; position: relative;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Agregar nuevo servicio</h2>
-      <button type="button" id="btnCerrarModalServicio" style="background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; line-height: 1;">×</button>
+      <h2 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0;">Agregar nuevo servicio</h2>
+      <button type="button" id="btnCerrarModalServicio" style="background: none; border: none; font-size: var(--font-lg); color: #64748b; cursor: pointer; line-height: 1;">×</button>
     </div>
 
     <div id="msjModalServicio"></div>
@@ -52,43 +86,43 @@
     <form id="formCrearServicio" novalidate>
       {% csrf_token %}
       <div style="margin-bottom: 1rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Nombre del servicio *</label>
-        <input type="text" id="inputNombreServicio" required placeholder="Ej: Masaje a domicilio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem;">
+        <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Nombre del servicio *</label>
+        <input type="text" id="inputNombreServicio" required placeholder="Ej: Masaje a domicilio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm);">
       </div>
 
       <div style="margin-bottom: 1rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Categoría *</label>
-        <select id="selectCategoriaServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; background: #fff;">
+        <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Categoría *</label>
+        <select id="selectCategoriaServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm); background: #fff;">
           <option value="">-- Selecciona una categoría --</option>
         </select>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
         <div>
-          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Precio ($ COP) *</label>
-          <input type="number" id="inputPrecioServicio" required min="1000" step="500" placeholder="30000" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem;">
+          <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Precio ($ COP) *</label>
+          <input type="number" id="inputPrecioServicio" required min="1000" step="500" placeholder="30000" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm);">
         </div>
 
         <div>
-          <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Duración (min) *</label>
-          <input type="number" id="inputDuracionServicio" required min="15" step="15" value="60" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem;">
+          <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Duración (min) *</label>
+          <input type="number" id="inputDuracionServicio" required min="15" step="15" value="60" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm);">
         </div>
       </div>
 
       <div style="margin-bottom: 1rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estado del Servicio</label>
-        <select name="selectEstadoServicio" id="selectEstadoServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; background: #fff;">
+        <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Estado del Servicio</label>
+        <select name="selectEstadoServicio" id="selectEstadoServicio" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm); background: #fff;">
           <option value="ACTIVO">Activo</option>
           <option value="INACTIVO">Inactivo</option>
         </select>
       </div>
 
       <div style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Descripción del servicio (opcional)</label>
-        <textarea id="inputDescServicio" rows="3" placeholder="Detalla lo que incluye el servicio..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: 0.9rem; resize: vertical;"></textarea>
+        <label style="display: block; font-size: var(--font-sm); font-weight: 600; color: #334155; margin-bottom: 0.35rem;">Descripción del servicio (opcional)</label>
+        <textarea id="inputDescServicio" rows="3" placeholder="Detalla lo que incluye el servicio..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #e2e8f0; outline: none; font-size: var(--font-sm); resize: vertical;"></textarea>
       </div>
 
-      <button type="submit" id="btnGuardarServicio" style="width: 100%; background-color: #0d9488; color: #ffffff; font-weight: 700; padding: 0.85rem; border-radius: 0.75rem; border: none; font-size: 0.95rem; cursor: pointer;">
+      <button type="submit" id="btnGuardarServicio" style="width: 100%; background-color: #1A68FF; color: #ffffff; font-weight: 700; padding: 0.85rem; border-radius: 0.75rem; border: none; font-size: var(--font-md); cursor: pointer;">
         Guardar servicio
       </button>
     </form>
@@ -105,16 +139,16 @@
       </svg>
     </div>
 
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">¿Eliminar este Servicio?</h3>
-    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1.5rem 0; line-height: 1.4;">
+    <h3 style="font-size: var(--font-md); font-weight: 800; color: #0f172a; margin: 0 0 0.5rem 0;">¿Eliminar este Servicio?</h3>
+    <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 1.5rem 0; line-height: 1.4;">
       ¿Estás seguro de que deseas eliminar este servicio? Esta acción no se puede deshacer.
     </p>
 
     <div style="display: flex; gap: 0.75rem;">
-      <button type="button" id="btnCancelarModalServicio" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+      <button type="button" id="btnCancelarModalServicio" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer; transition: background-color 0.2s ease;">
         Cancelar
       </button>
-      <button type="button" id="btnConfirmarModalServicio" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer; transition: background-color 0.2s ease;">
+      <button type="button" id="btnConfirmarModalServicio" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer; transition: background-color 0.2s ease;">
         Eliminar
       </button>
     </div>
@@ -134,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function mostrarErrorModal(texto) {
     if (msjBox) {
-      msjBox.innerHTML = '<div style="background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.65rem 0.9rem; border-radius: 0.65rem; font-size: 0.85rem; font-weight: 700; margin-bottom: 1rem;">' + escaparHtml(texto) + '</div>';
+      msjBox.innerHTML = '<div style="background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 0.65rem 0.9rem; border-radius: 0.65rem; font-size: var(--font-sm); font-weight: 700; margin-bottom: 1rem;">' + escaparHtml(texto) + '</div>';
     }
   }
 
@@ -305,25 +339,25 @@ document.addEventListener('DOMContentLoaded', function() {
           return `
             <div id="card-servicio-${s.id}" style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
               <div>
-                <span style="background-color: #ccfbf1; color: #0f766e; font-size: 0.75rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${escaparHtml(categoria)}</span>
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a; margin: 0.75rem 0 0.35rem 0;">${escaparHtml(s.nombre)}</h3>
-                <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 1.25rem 0; line-height: 1.4;">${escaparHtml(s.descripcion || 'Sin descripción.')}</p>
+                <span style="background-color: #ccfbf1; color: #0f766e; font-size: var(--font-sm); font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px; text-transform: uppercase;">${escaparHtml(categoria)}</span>
+                <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0.75rem 0 0.35rem 0;">${escaparHtml(s.nombre)}</h3>
+                <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 1.25rem 0; line-height: 1.4;">${escaparHtml(s.descripcion || 'Sin descripción.')}</p>
               </div>
 
               <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
                 <div>
-                  <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">${precio}</div>
-                  <span style="font-size: 0.75rem; color: #94a3b8;">${duracion} min</span>
+                  <div style="font-size: var(--font-lg); font-weight: 800; color: #0f172a;">${precio}</div>
+                  <span style="font-size: var(--font-sm); color: #94a3b8;">${duracion} min</span>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
-                  <span style="background-color: ${bgColor}; color: ${textColor}; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; border: 1px solid ${borderColor};">
+                  <span style="background-color: ${bgColor}; color: ${textColor}; font-size: var(--font-sm); font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; border: 1px solid ${borderColor};">
                       ${textoEstado}
                   </span>
 
-                  <a href="/mis-servicios/${s.id}/editar/" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; text-decoration: none;">Editar</a>
-                  <button type="button" data-cambiar-estado="${s.id}" data-estado-actual="${esActivo ? 'ACTIVO' : 'INACTIVO'}" style="background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer;">${esActivo ? 'Desactivar' : 'Activar'}</button>
-                  <button type="button" data-eliminar-servicio="${s.id}" data-nombre-servicio="${escaparHtml(s.nombre || 'este servicio')}" style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
+                  <a href="/mis-servicios/${s.id}/editar/" style="background-color: #1A68FF; color: #ffffff; border: 1px solid #1A68FF; font-size: var(--font-sm); font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; text-decoration: none;">Editar</a>
+                  <button type="button" data-cambiar-estado="${s.id}" data-estado-actual="${esActivo ? 'ACTIVO' : 'INACTIVO'}" style="background-color: #f8fafc; color: #334155; border: 1px solid #cbd5e1; font-size: var(--font-sm); font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer;">${esActivo ? 'Desactivar' : 'Activar'}</button>
+                  <button type="button" data-eliminar-servicio="${s.id}" data-nombre-servicio="${escaparHtml(s.nombre || 'este servicio')}" style="background-color: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: var(--font-sm); font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s ease;">
                     Eliminar
                   </button>
                 </div>
