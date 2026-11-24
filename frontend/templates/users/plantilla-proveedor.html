@@ -7,8 +7,52 @@
     {% include 'nav_proveedor.html' %}
 {% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<style>
+:root { --font-xs: .8125rem; --font-sm: .875rem; --font-md: var(--font-size); --font-lg: 1.25rem; --font-xl: 2.25rem; }
+body, body button, body input, body select, body textarea { font-family: var(--font-main); }
+.reschedule-modal-backdrop { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(3, 2, 19, .5); backdrop-filter: blur(4px); }
+.reschedule-modal { width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow-y: auto; box-sizing: border-box; padding: clamp(1.25rem, 4vw, 1.75rem); border: 1px solid rgba(0, 0, 0, .1); border-radius: 1rem; background: #fff; color: #030213; text-align: left; box-shadow: 0 20px 40px rgba(3, 2, 19, .16); }
+.reschedule-modal-title { margin: 0 0 .5rem; color: #030213; font: 700 var(--font-lg)/1.3 var(--font-main); }
+.reschedule-modal-description { margin: 0 0 1.25rem; color: #5f6472; font: 400 var(--font-sm)/1.5 var(--font-main); }
+.reschedule-modal-error { margin-bottom: 1rem; }
+.reschedule-modal-error:empty { display: none; }
+.reschedule-modal-error-message { padding: .75rem .875rem; border: 1px solid #fecaca; border-radius: .625rem; background: #fef2f2; color: #991b1b; font: 600 var(--font-sm)/1.45 var(--font-main); }
+.reschedule-modal-field { margin-bottom: 1rem; }
+.reschedule-modal-field--last { margin-bottom: 1.5rem; }
+.reschedule-modal-field label { display: block; margin-bottom: .45rem; color: #303544; font: 600 var(--font-sm)/1.4 var(--font-main); }
+.reschedule-modal-control { display: block; width: 100%; min-height: 44px; box-sizing: border-box; padding: .7rem .875rem; border: 1px solid rgba(0, 0, 0, .14); border-radius: .625rem; background: #f3f3f5; color: #030213; font: 400 var(--font-md)/1.4 var(--font-main); transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.reschedule-modal-control:focus { border-color: #1a68ff; background: #fff; box-shadow: 0 0 0 3px rgba(26, 104, 255, .14); outline: none; }
+.reschedule-modal-control:focus-visible { outline: 2px solid #0052e0; outline-offset: 2px; }
+textarea.reschedule-modal-control { min-height: 5rem; resize: vertical; line-height: 1.5; }
+.flatpickr-calendar { width: 304px; padding: .65rem; border: 1px solid rgba(0, 0, 0, .1); border-radius: 1rem; box-shadow: 0 12px 32px rgba(3, 2, 19, .14); font-family: var(--font-main); }
+.flatpickr-months .flatpickr-month { height: 2.5rem; }
+.flatpickr-current-month { color: #030213; font-size: var(--font-md); font-weight: 600; }
+.flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year { appearance: none; border: 1px solid rgba(0, 0, 0, .1); border-radius: .625rem; background: #f3f3f5; color: #030213; font-family: inherit; font-size: var(--font-md); font-weight: 600; line-height: 1.5; padding: .3rem .5rem; vertical-align: middle; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { cursor: pointer; }
+.flatpickr-current-month .numInputWrapper { width: 4.5rem; }
+.flatpickr-current-month .numInputWrapper input.cur-year { width: 100%; text-align: center; }
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover, .flatpickr-current-month .numInputWrapper:hover input.cur-year { border-color: #1a68ff; }
+.flatpickr-current-month .flatpickr-monthDropdown-months:focus-visible, .flatpickr-current-month input.cur-year:focus-visible { outline: 2px solid #0052e0; outline-offset: 2px; }
+.flatpickr-monthDropdown-months option { background: #fff; color: #030213; font-family: inherit; }
+.flatpickr-weekdays { height: 2rem; }
+span.flatpickr-weekday { color: #717182; font-size: var(--font-xs); font-weight: 600; }
+.flatpickr-days, .dayContainer { width: 280px; min-width: 280px; max-width: 280px; }
+.flatpickr-day { max-width: 40px; height: 40px; line-height: 40px; border: 0; border-radius: 50%; color: #030213; font-family: inherit; font-size: var(--font-sm); }
+.flatpickr-day:hover { background: #ececf0; }
+.flatpickr-day.today { border: 1px solid #1a68ff; }
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange { background: #030213; border-color: #030213; color: #fff; }
+.flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover { background: #0052e0; border-color: #0052e0; }
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: #c4c4cc; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill: #030213; }
+@media (max-width: 360px) { .flatpickr-calendar { width: 286px; } .flatpickr-days, .dayContainer { width: 266px; min-width: 266px; max-width: 266px; } .flatpickr-day { max-width: 38px; } }
+@media (max-width: 480px) { .reschedule-modal-backdrop { align-items: flex-end; padding: .5rem; } .reschedule-modal { max-height: calc(100vh - 1rem); } }
+</style>
+{% endblock %}
+
 {% block body %}
-<div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2rem 1rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
+<div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2rem 1rem; font-family: var(--font-main); box-sizing: border-box;">
   <div style="max-width: 68rem; margin: 0 auto;">
     
     <!-- Encabezado del Perfil Proveedor -->
@@ -20,20 +64,20 @@
           </svg>
         </div>
         <div>
-          <span style="font-size: 0.75rem; font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em;">PERFIL PROVEEDOR</span>
-          <h1 style="font-size: 1.85rem; font-weight: 800; color: #0f172a; margin: 0.1rem 0 0 0;">Panel de proveedor</h1>
+          <span style="font-size: var(--font-xs); font-weight: 800; color: #0d9488; text-transform: uppercase; letter-spacing: 0.05em;">PERFIL PROVEEDOR</span>
+          <h1 style="font-size: var(--font-xl); font-weight: 800; color: #0f172a; margin: 0.1rem 0 0 0;">Panel de proveedor</h1>
         </div>
       </div>
 
       <!-- Métricas del Panel -->
       <div style="display: flex; gap: 1rem;">
         <div style="background-color: #fef9c3; border-radius: 1rem; padding: 0.75rem 1.25rem; text-align: center; min-width: 80px;">
-          <div id="stat-pendientes" style="font-size: 1.5rem; font-weight: 800; color: #854d0e; line-height: 1;">0</div>
-          <span style="font-size: 0.75rem; font-weight: 700; color: #a16207;">Pendientes</span>
+          <div id="stat-pendientes" style="font-size: var(--font-lg); font-weight: 800; color: #854d0e; line-height: 1;">0</div>
+          <span style="font-size: var(--font-xs); font-weight: 700; color: #a16207;">Pendientes</span>
         </div>
         <div style="background-color: #f0fdf4; border-radius: 1rem; padding: 0.75rem 1.25rem; text-align: center; min-width: 80px;">
-          <div id="stat-clientes" style="font-size: 1.5rem; font-weight: 800; color: #166534; line-height: 1;">0</div>
-          <span style="font-size: 0.75rem; font-weight: 700; color: #15803d;">Clientes</span>
+          <div id="stat-clientes" style="font-size: var(--font-lg); font-weight: 800; color: #166534; line-height: 1;">0</div>
+          <span style="font-size: var(--font-xs); font-weight: 700; color: #15803d;">Clientes</span>
         </div>
       </div>
     </div>
@@ -44,22 +88,22 @@
     <!-- Barra de Pestañas -->
     <div style="display: flex; gap: 0.5rem; background-color: #f1f5f9; padding: 0.4rem; border-radius: 1.1rem; margin-bottom: 1.5rem;">
       
-      <button type="button" class="tab-btn active" data-tab="tab-solicitudes" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: #ffffff; color: #0d9488; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 0.95rem;">
+      <button type="button" class="tab-btn active" data-tab="tab-solicitudes" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: #ffffff; color: #0d9488; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: var(--font-md);">
         <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
         </svg>
         Solicitudes entrantes
-        <span id="badge-count-pendientes" style="background-color: #f59e0b; color: #ffffff; border-radius: 9999px; padding: 0.15rem 0.55rem; font-size: 0.75rem; font-weight: 800;">0</span>
+        <span id="badge-count-pendientes" style="background-color: #f59e0b; color: #ffffff; border-radius: 9999px; padding: 0.15rem 0.55rem; font-size: var(--font-xs); font-weight: 800;">0</span>
       </button>
 
-      <button type="button" class="tab-btn" data-tab="tab-clientes" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: transparent; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.95rem;">
+      <button type="button" class="tab-btn" data-tab="tab-clientes" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: transparent; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: var(--font-md);">
         <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
         </svg>
         Mis clientes
       </button>
 
-      <button type="button" class="tab-btn" data-tab="tab-horario" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: transparent; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.95rem;">
+      <button type="button" class="tab-btn" data-tab="tab-horario" style="flex: 1; padding: 0.8rem 1rem; border: none; border-radius: 0.85rem; background-color: transparent; color: #64748b; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: var(--font-md);">
         <svg style="width: 1.1rem; height: 1.1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
         </svg>
@@ -72,7 +116,7 @@
       
       <!-- Sección Por Responder -->
       <div style="margin-bottom: 2rem;">
-        <h2 style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 1rem 0;">
+        <h2 style="font-size: var(--font-sm); font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 1rem 0;">
           POR RESPONDER
         </h2>
         <div id="contenedorPorResponder" style="display: flex; flex-direction: column; gap: 1rem;">
@@ -85,10 +129,10 @@
       <!-- Sección Respondidas -->
       <div>
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
-          <h2 style="font-size: 0.85rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">
+          <h2 style="font-size: var(--font-sm); font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 0;">
             GESTIONADAS / AGENDA
           </h2>
-          <select id="filtroEstadoRespondidas" style="padding: 0.45rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; background-color: #ffffff; color: #334155; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+          <select id="filtroEstadoRespondidas" style="padding: 0.45rem 0.85rem; border-radius: 0.65rem; border: 1px solid #cbd5e1; background-color: #ffffff; color: #334155; font-size: var(--font-sm); font-weight: 600; cursor: pointer;">
             <option value="">Todos los estados</option>
             <option value="SUGERIDA">Contrapropuesta enviada</option>
             <option value="ACEPTADA">Aceptadas</option>
@@ -118,10 +162,10 @@
     <div id="tab-horario" class="tab-content" style="display: none;">
       
       <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.75rem; margin-bottom: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
-        <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">Días de atención</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 1.25rem 0;">Este horario es el mismo de Disponibilidad. Los clientes solo verán estas franjas.</p>
-        <div id="resumenHorarioReal" style="margin: 0 0 1rem 0; color: #0f172a; font-size: 0.9rem;">Cargando horario guardado...</div>
-        <p style="margin: 0;"><a href="/disponibilidad/" style="color: #0d9488; font-weight: 700; font-size: 0.9rem; text-decoration: underline;">Abrir configuración completa y periodos no disponibles</a></p>
+        <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">Días de atención</h3>
+        <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 1.25rem 0;">Este horario es el mismo de Disponibilidad. Los clientes solo verán estas franjas.</p>
+        <div id="resumenHorarioReal" style="margin: 0 0 1rem 0; color: #0f172a; font-size: var(--font-sm);">Cargando horario guardado...</div>
+        <p style="margin: 0;"><a href="/disponibilidad/" style="color: #0d9488; font-weight: 700; font-size: var(--font-sm); text-decoration: underline;">Abrir configuración completa y periodos no disponibles</a></p>
       </div>
 
     </div>
@@ -294,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function mostrarMensajePanel(texto, tipo) {
     if (!msjPanel) return;
     var esError = tipo === 'error';
-    msjPanel.innerHTML = '<div style="background-color:' + (esError ? '#fef2f2' : '#f0fdf4') + '; color:' + (esError ? '#991b1b' : '#166534') + '; border:1px solid ' + (esError ? '#fecaca' : '#bbf7d0') + '; padding: 0.9rem 1.25rem; border-radius: 0.85rem; font-weight: 600; font-size: 0.9rem;">' + escaparHtml(texto) + '</div>';
+    msjPanel.innerHTML = '<div style="background-color:' + (esError ? '#fef2f2' : '#f0fdf4') + '; color:' + (esError ? '#991b1b' : '#166534') + '; border:1px solid ' + (esError ? '#fecaca' : '#bbf7d0') + '; padding: 0.9rem 1.25rem; border-radius: 0.85rem; font-weight: 600; font-size: var(--font-sm);">' + escaparHtml(texto) + '</div>';
     msjPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
@@ -352,19 +396,19 @@ document.addEventListener('DOMContentLoaded', function() {
   function badgeEstadoProveedor(sol) {
     const estado = (sol.estado || 'PENDIENTE').toUpperCase();
     if (estado === 'SUGERIDA') {
-      return `<span style="background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">⏳ Contrapropuesta enviada</span>`;
+      return `<span style="background-color: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">⏳ Contrapropuesta enviada</span>`;
     }
     if (estado === 'ACEPTADA') {
-      return `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✓ Aceptada</span>`;
+      return `<span style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✓ Aceptada</span>`;
     }
     if (estado === 'COMPLETADA') {
-      return `<span style="background-color: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✔ Completada</span>`;
+      return `<span style="background-color: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✔ Completada</span>`;
     }
     if (estado === 'CANCELADA') {
       const etiqueta = sol.cancelado_por === 'CLIENTE' ? 'Cancelada por cliente' : 'Cancelada / Rechazada';
-      return `<span style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✕ ${etiqueta}</span>`;
+      return `<span style="background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">✕ ${etiqueta}</span>`;
     }
-    return `<span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">Pendiente</span>`;
+    return `<span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px;">Pendiente</span>`;
   }
 
   function renderizarSeccionesSolicitudes(lista) {
@@ -410,44 +454,44 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #fef3c7; padding: 1.5rem; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 
             <div style="position: absolute; top: 1.5rem; right: 1.5rem;">
-              <span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: 0.8rem; font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.35rem;">
                 <svg style="width: 0.85rem; height: 0.85rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Pendiente
               </span>
             </div>
 
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">${cliente}</h3>
-            <p style="color: #0d9488; font-size: 0.95rem; font-weight: 600; margin: 0 0 0.85rem 0;">${servicio}</p>
+            <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.25rem 0;">${cliente}</h3>
+            <p style="color: #0d9488; font-size: var(--font-md); font-weight: 600; margin: 0 0 0.85rem 0;">${servicio}</p>
 
-            <div style="display: flex; gap: 1.25rem; align-items: center; color: #64748b; font-size: 0.85rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 1.25rem; align-items: center; color: #64748b; font-size: var(--font-sm); margin-bottom: 0.5rem; flex-wrap: wrap;">
               <span>📅 ${fecha}</span>
               <span>🕒 ${hora}${horaFin ? ' - ' + horaFin : ''}</span>
               <span>📍 ${direccion}${barrio}</span>
             </div>
 
             ${mostrarNota ? `
-              <div style="background-color: #f8fafc; border-radius: 0.75rem; padding: 0.85rem 1rem; color: #475569; font-size: 0.9rem; font-style: italic; margin: 0.75rem 0 1.25rem 0;">
+              <div style="background-color: #f8fafc; border-radius: 0.75rem; padding: 0.85rem 1rem; color: #475569; font-size: var(--font-sm); font-style: italic; margin: 0.75rem 0 1.25rem 0;">
                 "${escaparHtml(rawNota)}"
               </div>
             ` : '<div style="margin-bottom: 1rem;"></div>'}
 
             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <button type="button" onclick="aceptarSolicitud(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="aceptarSolicitud(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--font-sm);">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                 Aceptar
               </button>
 
-              <button type="button" onclick="contraproponer(${sol.id})" style="background-color: #ffffff; color: #2563eb; border: 1px solid #93c5fd; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="contraproponer(${sol.id})" style="background-color: #ffffff; color: #2563eb; border: 1px solid #93c5fd; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--font-sm);">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Contraproponer horario
               </button>
 
-              <button type="button" onclick="abrirModalRechazo(${sol.id})" style="background-color: #ffffff; color: #ef4444; border: 1px solid #fca5a5; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem;">
+              <button type="button" onclick="abrirModalRechazo(${sol.id})" style="background-color: #ffffff; color: #ef4444; border: 1px solid #fca5a5; padding: 0.65rem 1.25rem; border-radius: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; font-size: var(--font-sm);">
                 <svg style="width: 1rem; height: 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 Rechazar
               </button>
 
-              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.65rem 1rem; border-radius: 0.65rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; font-size: 0.85rem;">
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.65rem 1rem; border-radius: 0.65rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; font-size: var(--font-sm);">
                 Ver detalle
               </a>
             </div>
@@ -483,19 +527,19 @@ document.addEventListener('DOMContentLoaded', function() {
           const horaSug = escaparHtml(formatearHoraLectura(sol.hora_sugerida));
           const horaSugFin = escaparHtml(calcularHoraFin(sol.hora_sugerida, duracion));
           bloqueExtra = `
-            <div style="margin-top: 0.6rem; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.65rem; padding: 0.6rem 0.85rem; font-size: 0.85rem; color: #9a3412;">
+            <div style="margin-top: 0.6rem; background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.65rem; padding: 0.6rem 0.85rem; font-size: var(--font-sm); color: #9a3412;">
               <strong>Horario propuesto:</strong> ${fechaSug} · ${horaSug}${horaSugFin ? ' - ' + horaSugFin : ''}
               ${sol.comentario_contrapropuesta ? `<div style="margin-top: 0.25rem; font-style: italic;">"${escaparHtml(sol.comentario_contrapropuesta)}"</div>` : ''}
             </div>`;
         } else if (estado === 'CANCELADA' && sol.motivo_rechazo_cancelacion) {
           bloqueExtra = `
-            <div style="margin-top: 0.6rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: 0.82rem; color: #991b1b;">
+            <div style="margin-top: 0.6rem; background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: var(--font-xs); color: #991b1b;">
               <strong>Motivo:</strong> ${escaparHtml(sol.motivo_rechazo_cancelacion)}
             </div>`;
         } else if (estado === 'COMPLETADA') {
           const fechaCierre = sol.completado_en ? ` el ${escaparHtml(formatearFechaHora(sol.completado_en))}` : '';
           bloqueExtra = `
-            <div style="margin-top: 0.6rem; background-color: #f0fdfa; border: 1px solid #99f6e4; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: 0.82rem; color: #115e59;">
+            <div style="margin-top: 0.6rem; background-color: #f0fdfa; border: 1px solid #99f6e4; border-radius: 0.65rem; padding: 0.55rem 0.85rem; font-size: var(--font-xs); color: #115e59;">
               <strong>Servicio finalizado${fechaCierre}</strong>
               ${sol.observaciones_finalizacion ? `<div>${escaparHtml(sol.observaciones_finalizacion)}</div>` : ''}
             </div>`;
@@ -505,30 +549,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (estado === 'ACEPTADA') {
           botonesAccion = `
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
-              <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+              <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                 ✓ Finalizar servicio
               </button>
-              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.5rem 0.95rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                 Cancelar reserva
               </button>
-              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.5rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.5rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: var(--font-xs);">
                 Ver detalle
               </a>
             </div>`;
         } else if (estado === 'SUGERIDA') {
           botonesAccion = `
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
-              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.9rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.82rem;">
+              <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.9rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                 Cancelar solicitud
               </button>
-              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: var(--font-xs);">
                 Ver detalle
               </a>
             </div>`;
         } else {
           botonesAccion = `
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; margin-top: 0.6rem;">
-              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: 0.82rem;">
+              <a href="/mis-solicitudes/${sol.id}/" style="background-color: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; text-decoration: none; font-size: var(--font-xs);">
                 Ver detalle
               </a>
             </div>`;
@@ -537,14 +581,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return `
           <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 260px;">
-              <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h3>
-              <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 0.4rem 0;">${servicio}</p>
+              <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h3>
+              <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.4rem 0;">${servicio}</p>
 
-              <div style="display: flex; gap: 1rem; color: #64748b; font-size: 0.85rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+              <div style="display: flex; gap: 1rem; color: #64748b; font-size: var(--font-sm); flex-wrap: wrap; margin-bottom: 0.3rem;">
                 <span>📅 <strong>${fecha}</strong></span>
                 <span>🕒 ${horaInicio} - ${horaFin}</span>
               </div>
-              <div style="color: #475569; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.3rem;">
+              <div style="color: #475569; font-size: var(--font-sm); display: inline-flex; align-items: center; gap: 0.3rem;">
                 📍 <strong>Dirección:</strong> ${direccion}${barrio}
               </div>
               ${bloqueExtra}
@@ -604,19 +648,19 @@ document.addEventListener('DOMContentLoaded', function() {
       return `
         <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
           <div>
-            <h4 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h4>
-            <p style="color: #64748b; font-size: 0.85rem; margin: 0 0 0.3rem 0;">${servicio}</p>
-            <p style="color: #64748b; font-size: 0.8rem; margin: 0 0 0.2rem 0;">📅 ${fecha} (${horaInicio} - ${horaFin}) • 📞 ${telefono}</p>
-            <p style="color: #475569; font-size: 0.8rem; margin: 0;">📍 ${direccion}${barrio}</p>
+            <h4 style="font-size: var(--font-lg); font-weight: 700; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h4>
+            <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.3rem 0;">${servicio}</p>
+            <p style="color: #64748b; font-size: var(--font-xs); margin: 0 0 0.2rem 0;">📅 ${fecha} (${horaInicio} - ${horaFin}) • 📞 ${telefono}</p>
+            <p style="color: #475569; font-size: var(--font-xs); margin: 0;">📍 ${direccion}${barrio}</p>
           </div>
           <div style="text-align: right;">
             ${badgeEstadoProveedor(sol)}
             ${estado === 'ACEPTADA' ? `
               <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 0.5rem;">
-                <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                <button type="button" onclick="abrirModalFinalizar(${sol.id})" style="background-color: #0d9488; color: #ffffff; border: none; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                   ✓ Finalizar
                 </button>
-                <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: 0.8rem;">
+                <button type="button" onclick="abrirModalCancelarProveedor(${sol.id})" style="background-color: #ffffff; color: #dc2626; border: 1px solid #fca5a5; padding: 0.45rem 0.85rem; border-radius: 0.6rem; font-weight: 700; cursor: pointer; font-size: var(--font-xs);">
                   Cancelar
                 </button>
               </div>
@@ -676,7 +720,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function mostrarErrorEnModal(el, texto) {
     if (!el) return;
     el.innerHTML = texto
-      ? '<div style="background-color:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding: 0.6rem 0.8rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 600;">' + escaparHtml(texto) + '</div>'
+      ? '<div class="reschedule-modal-error-message">' + escaparHtml(texto) + '</div>'
       : '';
   }
 
@@ -770,7 +814,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var rawFecha = sol ? (sol.fecha_solicitada || '') : '';
     duracionContrapropuesta = (sol && sol.duracion_minutos_copia) ? Number(sol.duracion_minutos_copia) : 60;
 
-    if (inputFechaContrapropuesta) inputFechaContrapropuesta.value = rawFecha;
+    if (inputFechaContrapropuesta) {
+      if (inputFechaContrapropuesta._flatpickr) inputFechaContrapropuesta._flatpickr.setDate(rawFecha || null, false);
+      else inputFechaContrapropuesta.value = rawFecha;
+    }
     if (inputComentarioContrapropuesta) inputComentarioContrapropuesta.value = '';
     mostrarErrorEnModal(errModalContraproponer, '');
     poblarFranjasParaFecha(rawFecha);
@@ -987,36 +1034,36 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Modal Contraproponer Horario (HU-15) -->
-<div id="modalContraproponer" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
-  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: left; border: 1px solid #e2e8f0;">
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Proponer nuevo horario</h3>
-    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1rem 0; line-height: 1.4;">
+<div id="modalContraproponer" class="reschedule-modal-backdrop">
+  <div class="reschedule-modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalContraproponer" aria-describedby="descripcionModalContraproponer">
+    <h3 id="tituloModalContraproponer" class="reschedule-modal-title">Proponer nuevo horario</h3>
+    <p id="descripcionModalContraproponer" class="reschedule-modal-description">
       Elige una fecha y franja disponible para enviar tu contrapropuesta al cliente:
     </p>
-    <div id="errModalContraproponer" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+    <div id="errModalContraproponer" class="reschedule-modal-error" aria-live="polite" aria-atomic="true"></div>
 
-    <div style="margin-bottom: 1rem;">
-      <label for="inputFechaContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Fecha propuesta</label>
-      <input type="date" id="inputFechaContrapropuesta" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; outline: none;">
+    <div class="reschedule-modal-field">
+      <label for="inputFechaContrapropuesta">Fecha propuesta</label>
+      <input type="text" id="inputFechaContrapropuesta" class="reschedule-modal-control" placeholder="dd/mm/aaaa" autocomplete="off" aria-label="Fecha propuesta">
     </div>
 
-    <div style="margin-bottom: 1rem;">
-      <label for="selectFranjaHoraria" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Hora propuesta *</label>
-      <select id="selectFranjaHoraria" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; font-weight: 600; color: #0f172a; outline: none; cursor: pointer;">
+    <div class="reschedule-modal-field">
+      <label for="selectFranjaHoraria">Hora propuesta *</label>
+      <select id="selectFranjaHoraria" class="reschedule-modal-control">
         <option value="">-- Selecciona una hora disponible --</option>
       </select>
     </div>
 
-    <div style="margin-bottom: 1.5rem;">
-      <label for="inputComentarioContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Comentario para el cliente (opcional)</label>
-      <textarea id="inputComentarioContrapropuesta" rows="2" placeholder="Ej: A esa hora tengo otro servicio, pero puedo atenderte en esta franja." style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.88rem; color: #0f172a; resize: vertical; outline: none;"></textarea>
+    <div class="reschedule-modal-field reschedule-modal-field--last">
+      <label for="inputComentarioContrapropuesta">Comentario para el cliente (opcional)</label>
+      <textarea id="inputComentarioContrapropuesta" class="reschedule-modal-control" rows="2" placeholder="Ej: A esa hora tengo otro servicio, pero puedo atenderte en esta franja."></textarea>
     </div>
 
     <div style="display: flex; gap: 0.75rem;">
-      <button type="button" id="btnCancelarContrapropuesta" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnCancelarContrapropuesta" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Cancelar
       </button>
-      <button type="button" id="btnConfirmarContrapropuesta" style="flex: 1; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnConfirmarContrapropuesta" style="flex: 1; background-color: #2563eb; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Enviar contrapropuesta
       </button>
     </div>
@@ -1026,17 +1073,17 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Modal Rechazar / Cancelar con Motivo (HU-15 & HU-17) -->
 <div id="modalMotivoProveedor" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
   <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
-    <h3 id="tituloModalMotivo" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Motivo</h3>
-    <p id="descModalMotivo" style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.75rem 0; line-height: 1.4;"></p>
+    <h3 id="tituloModalMotivo" style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Motivo</h3>
+    <p id="descModalMotivo" style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.75rem 0; line-height: 1.4;"></p>
     <div id="errModalMotivoProveedor" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
 
-    <textarea id="inputMotivoProveedor" rows="3" placeholder="Escribe el motivo aquí..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+    <textarea id="inputMotivoProveedor" rows="3" placeholder="Escribe el motivo aquí..." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: var(--font-sm); color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
 
     <div style="display: flex; gap: 0.75rem;">
-      <button type="button" id="btnCancelarModalMotivo" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnCancelarModalMotivo" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Volver
       </button>
-      <button type="button" id="btnConfirmarModalMotivo" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnConfirmarModalMotivo" style="flex: 1; background-color: #ef4444; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Confirmar
       </button>
     </div>
@@ -1046,23 +1093,59 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Modal Finalizar Servicio (HU-18) -->
 <div id="modalFinalizarServicio" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
   <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); text-align: left; border: 1px solid #e2e8f0;">
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Finalizar servicio</h3>
-    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 0.75rem 0; line-height: 1.4;">
+    <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Finalizar servicio</h3>
+    <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.75rem 0; line-height: 1.4;">
       ¿Confirmas que el servicio fue prestado satisfactoriamente? Esta acción marcará la reserva como <strong>Completada</strong>.
     </p>
     <div id="errModalFinalizarServicio" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
 
-    <label for="inputObsFinalizacion" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Observaciones de cierre (opcional)</label>
-    <textarea id="inputObsFinalizacion" rows="3" placeholder="Ej: Servicio realizado sin novedades." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
+    <label for="inputObsFinalizacion" style="display: block; font-size: var(--font-xs); font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Observaciones de cierre (opcional)</label>
+    <textarea id="inputObsFinalizacion" rows="3" placeholder="Ej: Servicio realizado sin novedades." style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: var(--font-sm); color: #0f172a; margin-bottom: 1.25rem; resize: vertical; outline: none;"></textarea>
 
     <div style="display: flex; gap: 0.75rem;">
-      <button type="button" id="btnCancelarFinalizar" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnCancelarFinalizar" style="flex: 1; background-color: #f1f5f9; color: #475569; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Volver
       </button>
-      <button type="button" id="btnConfirmarFinalizar" style="flex: 1; background-color: #0d9488; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: 0.875rem; cursor: pointer;">
+      <button type="button" id="btnConfirmarFinalizar" style="flex: 1; background-color: #0d9488; color: #ffffff; font-weight: 700; padding: 0.7rem; border-radius: 0.75rem; border: none; font-size: var(--font-sm); cursor: pointer;">
         Marcar completada
       </button>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var input = document.getElementById('inputFechaContrapropuesta');
+  if (!input) return;
+  if (typeof flatpickr !== 'function') {
+    input.type = 'date';
+    return;
+  }
+
+  var spanish = flatpickr.l10ns.es || flatpickr.l10ns.default;
+  var locale = Object.assign({}, spanish, {
+    firstDayOfWeek: 1,
+    weekdays: Object.assign({}, spanish.weekdays, { shorthand: ['D', 'L', 'M', 'X', 'J', 'V', 'S'] })
+  });
+  var picker = flatpickr(input, {
+    altInput: true,
+    altInputClass: 'reschedule-modal-control',
+    altFormat: 'd/m/Y',
+    dateFormat: 'Y-m-d',
+    disableMobile: true,
+    locale: locale,
+    minDate: input.min
+  });
+  if (picker.altInput) {
+    picker.altInput.id = 'inputFechaContrapropuestaVisible';
+    picker.altInput.setAttribute('aria-label', 'Fecha propuesta');
+    var label = document.querySelector('label[for="inputFechaContrapropuesta"]');
+    if (label) label.htmlFor = picker.altInput.id;
+  }
+});
+</script>
 {% endblock %}
