@@ -7,6 +7,48 @@
     {% include 'nav_proveedor.html' %}
 {% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<style>
+.reschedule-modal-backdrop { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(3, 2, 19, .5); backdrop-filter: blur(4px); }
+.reschedule-modal { width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow-y: auto; box-sizing: border-box; padding: clamp(1.25rem, 4vw, 1.75rem); border: 1px solid rgba(0, 0, 0, .1); border-radius: 1rem; background: #fff; color: #030213; text-align: left; box-shadow: 0 20px 40px rgba(3, 2, 19, .16); }
+.reschedule-modal-title { margin: 0 0 .5rem; color: #030213; font: 700 1.25rem/1.3 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.reschedule-modal-description { margin: 0 0 1.25rem; color: #5f6472; font: 400 .9375rem/1.5 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.reschedule-modal-error { margin-bottom: 1rem; }
+.reschedule-modal-error:empty { display: none; }
+.reschedule-modal-error-message { padding: .75rem .875rem; border: 1px solid #fecaca; border-radius: .625rem; background: #fef2f2; color: #991b1b; font: 600 .875rem/1.45 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.reschedule-modal-field { margin-bottom: 1rem; }
+.reschedule-modal-field--last { margin-bottom: 1.5rem; }
+.reschedule-modal-field label { display: block; margin-bottom: .45rem; color: #303544; font: 600 .875rem/1.4 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.reschedule-modal-control { display: block; width: 100%; min-height: 44px; box-sizing: border-box; padding: .7rem .875rem; border: 1px solid rgba(0, 0, 0, .14); border-radius: .625rem; background: #f3f3f5; color: #030213; font: 400 1rem/1.4 Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.reschedule-modal-control:focus { border-color: #1a68ff; background: #fff; box-shadow: 0 0 0 3px rgba(26, 104, 255, .14); outline: none; }
+.reschedule-modal-control:focus-visible { outline: 2px solid #0052e0; outline-offset: 2px; }
+textarea.reschedule-modal-control { min-height: 5rem; resize: vertical; line-height: 1.5; }
+.flatpickr-calendar { width: 304px; padding: .65rem; border: 1px solid rgba(0, 0, 0, .1); border-radius: 1rem; box-shadow: 0 12px 32px rgba(3, 2, 19, .14); font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+.flatpickr-months .flatpickr-month { height: 2.5rem; }
+.flatpickr-current-month { color: #030213; font-size: 1rem; font-weight: 600; }
+.flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year { appearance: none; border: 1px solid rgba(0, 0, 0, .1); border-radius: .625rem; background: #f3f3f5; color: #030213; font-family: inherit; font-size: 1rem; font-weight: 600; line-height: 1.5; padding: .3rem .5rem; vertical-align: middle; }
+.flatpickr-current-month .flatpickr-monthDropdown-months { cursor: pointer; }
+.flatpickr-current-month .numInputWrapper { width: 4.5rem; }
+.flatpickr-current-month .numInputWrapper input.cur-year { width: 100%; text-align: center; }
+.flatpickr-current-month .flatpickr-monthDropdown-months:hover, .flatpickr-current-month .numInputWrapper:hover input.cur-year { border-color: #1a68ff; }
+.flatpickr-current-month .flatpickr-monthDropdown-months:focus-visible, .flatpickr-current-month input.cur-year:focus-visible { outline: 2px solid #0052e0; outline-offset: 2px; }
+.flatpickr-monthDropdown-months option { background: #fff; color: #030213; font-family: inherit; }
+.flatpickr-weekdays { height: 2rem; }
+span.flatpickr-weekday { color: #717182; font-size: .75rem; font-weight: 600; }
+.flatpickr-days, .dayContainer { width: 280px; min-width: 280px; max-width: 280px; }
+.flatpickr-day { max-width: 40px; height: 40px; line-height: 40px; border: 0; border-radius: 50%; color: #030213; font-family: inherit; font-size: .875rem; }
+.flatpickr-day:hover { background: #ececf0; }
+.flatpickr-day.today { border: 1px solid #1a68ff; }
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange { background: #030213; border-color: #030213; color: #fff; }
+.flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover { background: #0052e0; border-color: #0052e0; }
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: #c4c4cc; }
+.flatpickr-prev-month svg, .flatpickr-next-month svg { fill: #030213; }
+@media (max-width: 360px) { .flatpickr-calendar { width: 286px; } .flatpickr-days, .dayContainer { width: 266px; min-width: 266px; max-width: 266px; } .flatpickr-day { max-width: 38px; } }
+@media (max-width: 480px) { .reschedule-modal-backdrop { align-items: flex-end; padding: .5rem; } .reschedule-modal { max-height: calc(100vh - 1rem); } }
+</style>
+{% endblock %}
+
 {% block body %}
 <div style="background-color: #f8fafc; min-height: calc(100vh - 72px); padding: 2rem 1rem; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; box-sizing: border-box;">
   <div style="max-width: 68rem; margin: 0 auto;">
@@ -676,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function mostrarErrorEnModal(el, texto) {
     if (!el) return;
     el.innerHTML = texto
-      ? '<div style="background-color:#fef2f2; color:#991b1b; border:1px solid #fecaca; padding: 0.6rem 0.8rem; border-radius: 0.6rem; font-size: 0.82rem; font-weight: 600;">' + escaparHtml(texto) + '</div>'
+      ? '<div class="reschedule-modal-error-message">' + escaparHtml(texto) + '</div>'
       : '';
   }
 
@@ -770,7 +812,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var rawFecha = sol ? (sol.fecha_solicitada || '') : '';
     duracionContrapropuesta = (sol && sol.duracion_minutos_copia) ? Number(sol.duracion_minutos_copia) : 60;
 
-    if (inputFechaContrapropuesta) inputFechaContrapropuesta.value = rawFecha;
+    if (inputFechaContrapropuesta) {
+      if (inputFechaContrapropuesta._flatpickr) inputFechaContrapropuesta._flatpickr.setDate(rawFecha || null, false);
+      else inputFechaContrapropuesta.value = rawFecha;
+    }
     if (inputComentarioContrapropuesta) inputComentarioContrapropuesta.value = '';
     mostrarErrorEnModal(errModalContraproponer, '');
     poblarFranjasParaFecha(rawFecha);
@@ -987,29 +1032,29 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Modal Contraproponer Horario (HU-15) -->
-<div id="modalContraproponer" style="display: none; position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
-  <div style="background-color: #ffffff; border-radius: 1.25rem; max-width: 26rem; width: 100%; padding: 1.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); text-align: left; border: 1px solid #e2e8f0;">
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem 0;">Proponer nuevo horario</h3>
-    <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 1rem 0; line-height: 1.4;">
+<div id="modalContraproponer" class="reschedule-modal-backdrop">
+  <div class="reschedule-modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalContraproponer" aria-describedby="descripcionModalContraproponer">
+    <h3 id="tituloModalContraproponer" class="reschedule-modal-title">Proponer nuevo horario</h3>
+    <p id="descripcionModalContraproponer" class="reschedule-modal-description">
       Elige una fecha y franja disponible para enviar tu contrapropuesta al cliente:
     </p>
-    <div id="errModalContraproponer" aria-live="polite" style="margin-bottom: 0.75rem;"></div>
+    <div id="errModalContraproponer" class="reschedule-modal-error" aria-live="polite" aria-atomic="true"></div>
 
-    <div style="margin-bottom: 1rem;">
-      <label for="inputFechaContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Fecha propuesta</label>
-      <input type="date" id="inputFechaContrapropuesta" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; color: #0f172a; outline: none;">
+    <div class="reschedule-modal-field">
+      <label for="inputFechaContrapropuesta">Fecha propuesta</label>
+      <input type="text" id="inputFechaContrapropuesta" class="reschedule-modal-control" placeholder="dd/mm/aaaa" autocomplete="off" aria-label="Fecha propuesta">
     </div>
 
-    <div style="margin-bottom: 1rem;">
-      <label for="selectFranjaHoraria" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Hora propuesta *</label>
-      <select id="selectFranjaHoraria" style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.9rem; font-weight: 600; color: #0f172a; outline: none; cursor: pointer;">
+    <div class="reschedule-modal-field">
+      <label for="selectFranjaHoraria">Hora propuesta *</label>
+      <select id="selectFranjaHoraria" class="reschedule-modal-control">
         <option value="">-- Selecciona una hora disponible --</option>
       </select>
     </div>
 
-    <div style="margin-bottom: 1.5rem;">
-      <label for="inputComentarioContrapropuesta" style="display: block; font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">Comentario para el cliente (opcional)</label>
-      <textarea id="inputComentarioContrapropuesta" rows="2" placeholder="Ej: A esa hora tengo otro servicio, pero puedo atenderte en esta franja." style="width: 100%; box-sizing: border-box; padding: 0.7rem; border-radius: 0.75rem; border: 1px solid #cbd5e1; background-color: #f8fafc; font-size: 0.88rem; color: #0f172a; resize: vertical; outline: none;"></textarea>
+    <div class="reschedule-modal-field reschedule-modal-field--last">
+      <label for="inputComentarioContrapropuesta">Comentario para el cliente (opcional)</label>
+      <textarea id="inputComentarioContrapropuesta" class="reschedule-modal-control" rows="2" placeholder="Ej: A esa hora tengo otro servicio, pero puedo atenderte en esta franja."></textarea>
     </div>
 
     <div style="display: flex; gap: 0.75rem;">
@@ -1065,4 +1110,40 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var input = document.getElementById('inputFechaContrapropuesta');
+  if (!input) return;
+  if (typeof flatpickr !== 'function') {
+    input.type = 'date';
+    return;
+  }
+
+  var spanish = flatpickr.l10ns.es || flatpickr.l10ns.default;
+  var locale = Object.assign({}, spanish, {
+    firstDayOfWeek: 1,
+    weekdays: Object.assign({}, spanish.weekdays, { shorthand: ['D', 'L', 'M', 'X', 'J', 'V', 'S'] })
+  });
+  var picker = flatpickr(input, {
+    altInput: true,
+    altInputClass: 'reschedule-modal-control',
+    altFormat: 'd/m/Y',
+    dateFormat: 'Y-m-d',
+    disableMobile: true,
+    locale: locale,
+    minDate: input.min
+  });
+  if (picker.altInput) {
+    picker.altInput.id = 'inputFechaContrapropuestaVisible';
+    picker.altInput.setAttribute('aria-label', 'Fecha propuesta');
+    var label = document.querySelector('label[for="inputFechaContrapropuesta"]');
+    if (label) label.htmlFor = picker.altInput.id;
+  }
+});
+</script>
 {% endblock %}
