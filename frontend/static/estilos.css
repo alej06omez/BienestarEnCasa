@@ -175,6 +175,7 @@ main.main-content {
   padding: 0 32px;
   display: flex;
   align-items: center;
+  position: left;
   justify-content: space-between;
 }
 

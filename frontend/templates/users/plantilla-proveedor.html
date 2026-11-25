@@ -12,7 +12,7 @@
 <style>
 :root { --font-xs: .8125rem; --font-sm: .875rem; --font-md: var(--font-size); --font-lg: 1.25rem; --font-xl: 2.25rem; }
 body, body button, body input, body select, body textarea { font-family: var(--font-main); }
-.reschedule-modal-backdrop { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(3, 2, 19, .5); backdrop-filter: blur(4px); }
+.reschedule-modal-backdrop { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(3, 2, 19, .5); backdrop-filter: blur(4px) ; }
 .reschedule-modal { width: min(100%, 30rem); max-height: calc(100vh - 2rem); overflow-y: auto; box-sizing: border-box; padding: clamp(1.25rem, 4vw, 1.75rem); border: 1px solid rgba(0, 0, 0, .1); border-radius: 1rem; background: #fff; color: #030213; text-align: left; box-shadow: 0 20px 40px rgba(3, 2, 19, .16); }
 .reschedule-modal-title { margin: 0 0 .5rem; color: #030213; font: 700 var(--font-lg)/1.3 var(--font-main); }
 .reschedule-modal-description { margin: 0 0 1.25rem; color: #5f6472; font: 400 var(--font-sm)/1.5 var(--font-main); }
@@ -48,6 +48,38 @@ span.flatpickr-weekday { color: #717182; font-size: var(--font-xs); font-weight:
 .flatpickr-prev-month svg, .flatpickr-next-month svg { fill: #030213; }
 @media (max-width: 360px) { .flatpickr-calendar { width: 286px; } .flatpickr-days, .dayContainer { width: 266px; min-width: 266px; max-width: 266px; } .flatpickr-day { max-width: 38px; } }
 @media (max-width: 480px) { .reschedule-modal-backdrop { align-items: flex-end; padding: .5rem; } .reschedule-modal { max-height: calc(100vh - 1rem); } }
+.incoming-request-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 1rem; row-gap: .35rem; padding: 1rem 1.25rem !important; border: 1px solid #dbe3ee !important; border-left: 4px solid #f5b11d !important; border-radius: 1rem !important; box-shadow: none !important; }
+.incoming-request-card > div:first-child { position: static !important; grid-column: 2; grid-row: 1; align-self: center; }
+.incoming-request-card > h3 { grid-column: 1; grid-row: 1; margin: 0 !important; font-size: 1.05rem !important; line-height: 1.4; }
+.incoming-request-card > p { grid-column: 1; grid-row: 2; margin: 0 !important; }
+.incoming-request-card > div:nth-of-type(2) { grid-column: 1; grid-row: 3; gap: .35rem 1rem !important; margin: .15rem 0 0 !important; color: #475569 !important; }
+.incoming-request-card > div:nth-of-type(3) { grid-column: 1; grid-row: 4; margin: .35rem 0 0 !important; }
+.incoming-request-card > div:nth-of-type(4) { grid-column: 2; grid-row: 2 / span 3; display: flex; flex-wrap: wrap; justify-content: flex-end; align-content: center; gap: .5rem !important; margin-top: 0; }
+.incoming-request-card > div:nth-of-type(4) button, .incoming-request-card > div:nth-of-type(4) a { min-height: 42px; padding: .55rem .85rem !important; border-radius: .65rem !important; }
+@media (max-width: 640px) {
+  .incoming-request-card { grid-template-columns: minmax(0, 1fr) auto; padding: .9rem !important; }
+  .incoming-request-card > div:first-child { grid-column: 2; grid-row: 1; }
+  .incoming-request-card > h3 { grid-column: 1; grid-row: 1; padding-right: .25rem; }
+  .incoming-request-card > p { grid-column: 1 / -1; grid-row: 2; }
+  .incoming-request-card > div:nth-of-type(4) { grid-column: 1 / -1; grid-row: 5; justify-content: flex-start; margin-top: .35rem; }
+  .incoming-request-card > div:nth-of-type(4) button, .incoming-request-card > div:nth-of-type(4) a { flex: 1 1 auto; justify-content: center; }
+}
+.managed-request-card { display: grid !important; grid-template-columns: minmax(0, 1fr) auto; align-items: center !important; gap: .5rem 1rem !important; padding: 1rem 1.25rem !important; border: 1px solid #dbe3ee !important; border-left: 4px solid #0d9488 !important; border-radius: 1rem !important; box-shadow: none !important; }
+.managed-request-card:has(> div:last-child > span[style*="#c2410c"]) { border-left-color: #f5b11d !important; }
+.managed-request-card:has(> div:last-child > span[style*="#991b1b"]) { border-left-color: #ef4444 !important; }
+.managed-request-card > div:first-child { min-width: 0 !important; }
+.managed-request-card > div:first-child > h3 { margin: 0 0 .15rem !important; font-size: 1.05rem !important; line-height: 1.4; }
+.managed-request-card > div:first-child > p { margin: 0 0 .4rem !important; }
+.managed-request-card > div:first-child > div:nth-of-type(1) { gap: .35rem 1rem !important; margin-bottom: .25rem !important; }
+.managed-request-card > div:last-child { align-self: start; text-align: right; }
+.managed-request-card > div:last-child > div { gap: .5rem !important; margin-top: .5rem !important; }
+.managed-request-card button, .managed-request-card a { min-height: 42px; padding: .55rem .85rem !important; border-radius: .65rem !important; }
+@media (max-width: 640px) {
+  .managed-request-card { grid-template-columns: minmax(0, 1fr); padding: .9rem !important; }
+  .managed-request-card > div:last-child { grid-column: 1; text-align: left; }
+  .managed-request-card > div:last-child > div { justify-content: flex-start !important; }
+  .managed-request-card button, .managed-request-card a { flex: 1 1 auto; text-align: center; }
+}
 </style>
 {% endblock %}
 
@@ -456,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const mostrarNota = rawNota !== '' && rawNota.toLowerCase() !== 'dirección del perfil' && rawNota.toLowerCase() !== 'direccion del perfil';
 
         return `
-          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #fef3c7; padding: 1.5rem; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+          <div class="incoming-request-card" style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #fef3c7; padding: 1.5rem; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
 
             <div style="position: absolute; top: 1.5rem; right: 1.5rem;">
               <span style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-size: var(--font-xs); font-weight: 700; padding: 0.35rem 0.85rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.35rem;">
@@ -469,9 +501,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <p style="color: #0d9488; font-size: var(--font-md); font-weight: 600; margin: 0 0 0.85rem 0;">${servicio}</p>
 
             <div style="display: flex; gap: 1.25rem; align-items: center; color: #64748b; font-size: var(--font-sm); margin-bottom: 0.5rem; flex-wrap: wrap;">
-              <span>📅 ${fecha}</span>
-              <span>🕒 ${hora}${horaFin ? ' - ' + horaFin : ''}</span>
-              <span>📍 ${direccion}${barrio}</span>
+              <span>Fecha: ${fecha}</span>
+              <span>Hora: ${hora}${horaFin ? ' - ' + horaFin : ''}</span>
+              <span>Ubicación: ${direccion}${barrio}</span>
             </div>
 
             ${mostrarNota ? `
@@ -584,17 +616,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         return `
-          <div style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+          <div class="managed-request-card" style="background-color: #ffffff; border-radius: 1.25rem; border: 1px solid #e2e8f0; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 260px;">
               <h3 style="font-size: var(--font-lg); font-weight: 800; color: #0f172a; margin: 0 0 0.2rem 0;">${cliente}</h3>
               <p style="color: #64748b; font-size: var(--font-sm); margin: 0 0 0.4rem 0;">${servicio}</p>
 
-              <div style="display: flex; gap: 1rem; color: #64748b; font-size: var(--font-sm); flex-wrap: wrap; margin-bottom: 0.3rem;">
-                <span>📅 <strong>${fecha}</strong></span>
-                <span>🕒 ${horaInicio} - ${horaFin}</span>
+              <div style="display: flex; gap: 1rem; color: #475569; font-size: var(--font-sm); flex-wrap: wrap; margin-bottom: 0.3rem;">
+                <span><strong>Fecha:</strong> ${fecha}</span>
+                <span><strong>Hora:</strong> ${horaInicio} - ${horaFin}</span>
               </div>
+
               <div style="color: #475569; font-size: var(--font-sm); display: inline-flex; align-items: center; gap: 0.3rem;">
-                📍 <strong>Dirección:</strong> ${direccion}${barrio}
+                <strong>Ubicación:</strong> Dirección: ${direccion}${barrio}
               </div>
               ${bloqueExtra}
             </div>
@@ -680,9 +713,9 @@ document.addEventListener('DOMContentLoaded', function() {
           return `
             <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0d9488; border-radius: 0.85rem; padding: 0.9rem 1.1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
               <div>
-                <div style="font-weight: 800; color: #0f172a; font-size: var(--font-md);">🕒 ${horaInicio} – ${horaFin} · ${servicio}</div>
-                <p style="color: #475569; font-size: var(--font-sm); margin: 0.25rem 0 0 0;">Cliente: <strong>${cliente}</strong>${telefono ? ' • 📞 ' + escaparHtml(telefono) : ''}</p>
-                <p style="color: #475569; font-size: var(--font-xs); margin: 0.2rem 0 0 0;">📍 ${direccion}${barrio}</p>
+                <div style="font-weight: 800; color: #0f172a; font-size: var(--font-md);">Hora ${horaInicio} – ${horaFin} · ${servicio}</div>
+                <p style="color: #475569; font-size: var(--font-sm); margin: 0.25rem 0 0 0;"><strong> Cliente: </strong>${cliente}${telefono ? ' <strong>Telefono: </strong>' + escaparHtml(telefono) : ''}</p>
+                <p style="color: #475569; font-size: var(--font-xs); margin: 0.2rem 0 0 0;"><strong>Ubicación: </strong>${direccion}${barrio}</p>
                 ${complemento}
               </div>
               <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
